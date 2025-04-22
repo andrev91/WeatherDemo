@@ -1,0 +1,114 @@
+import java.util.Properties
+
+fun getApiKey(propertyKey: String): String {
+    val properties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties") // Access file from root project
+    if (localPropertiesFile.exists()) {
+        properties.load(localPropertiesFile.inputStream())
+    }
+    // Return the property value or an empty string/placeholder if not found
+    return properties.getProperty(propertyKey, "")
+}
+
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
+    id("org.jetbrains.kotlin.plugin.serialization")
+    id("dagger.hilt.android.plugin")
+    kotlin("kapt")
+}
+
+android {
+    namespace = "com.example.adventure"
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId = "com.example.adventure"
+        minSdk = 28
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val accuApiKey = getApiKey("ACCUWEATHER_API_KEY")
+        // Add quotes around the string value for BuildConfig field
+        buildConfigField("String", "ACCUWEATHER_API_KEY", "\"$accuApiKey\"")
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+    buildFeatures {
+        compose = true
+        dataBinding = true
+        buildConfig = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.11"
+    }
+}
+
+dependencies {
+    // Core library
+    implementation("androidx.core:core-ktx:1.15.0")
+
+    // Hilt/Dagger
+    implementation("com.google.dagger:hilt-android:2.51")
+    implementation(libs.androidx.work.runtime.ktx)
+    kapt("com.google.dagger:hilt-compiler:2.51.1")
+
+    // Lifecycle libraries
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    implementation("androidx.fragment:fragment-ktx:1.6.1")
+
+    // Activity Compose library
+    implementation("androidx.activity:activity-compose:1.10.1")
+    implementation(platform("androidx.compose:compose-bom:2025.03.01"))
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-graphics")
+    debugImplementation("androidx.compose.ui:ui-tooling")
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    implementation("androidx.compose.material3:material3")
+
+    // Serialization libraries
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
+    implementation("com.google.dagger:hilt-android:2.51.1")
+    implementation("androidx.hilt:hilt-work:1.2.0") // Or latest
+    kapt("androidx.hilt:hilt-compiler:1.2.0") // Hilt Work compiler (often needed)
+
+    // Testing libraries
+    kaptTest("com.google.dagger:hilt-compiler:2.51")
+    kaptAndroidTest("com.google.datter:hilt-compiler:2.51")
+    testImplementation("com.google.dagger:hilt-android-testing:2.51")
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation(platform("androidx.compose:compose-bom:2025.03.01"))
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation("com.google.dagger:hilt-android-testing:2.51")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+
+    //API
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.2.0")
+    implementation("com.google.code.gson:gson:2.12.1")
+
+}
