@@ -15,10 +15,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @HiltWorker
-class LocationWorker @AssistedInject constructor(@Assisted context: Context, @Assisted params: WorkerParameters,
+class LocationKeyWorker @AssistedInject constructor(@Assisted context: Context, @Assisted params: WorkerParameters,
     private val apiService: ApiService,
     private val gson: Gson,
- @NetworkModule.ApiKey private val apiKey: String // Inject API key safely
+    @NetworkModule.ApiKey private val apiKey: String // Inject API key safely
 ): CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
@@ -51,7 +51,6 @@ class LocationWorker @AssistedInject constructor(@Assisted context: Context, @As
     }
 
     companion object {
-        const val WORK_NAME = "LocationWorker"
         const val LOCATION_KEY = "location"
         const val LOCATION_JSON = "locationJson"
         const val OUTPUT_SUCCESS = "SUCCESS" // Boolean

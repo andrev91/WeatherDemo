@@ -8,7 +8,7 @@ import androidx.work.Data
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.example.adventure.api.ApiService
-import com.example.adventure.data.WeatherConditionResponse
+import com.example.adventure.data.WeatherLocationResponse
 import com.example.adventure.network.NetworkModule
 import com.google.gson.Gson
 import dagger.assisted.Assisted
@@ -17,39 +17,39 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @HiltWorker
-class WeatherWorker @AssistedInject constructor(@Assisted context: Context, @Assisted params: WorkerParameters,
-    private val apiService: ApiService,
-    private val gson: Gson,
-    @NetworkModule.ApiKey private val apiKey: String // Inject API key safely
+class SearchWorker @AssistedInject constructor(@Assisted context: Context, @Assisted params: WorkerParameters,
+                                               private val apiService: ApiService,
+                                               private val gson: Gson,
+                                               @NetworkModule.ApiKey private val apiKey: String // Inject API key safely
     ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
-            val inputData = inputData.getString(WEATHER_KEY)?: return@withContext Result.failure(
+            val inputData = inputData.getString(SEARCH_KEY)?: return@withContext Result.failure(
                 workDataOf(OUTPUT_SUCCESS to false, OUTPUT_ERROR_MESSAGE to "No input data provided")
             )
 
-            val response = apiService.getWeather(inputData, apiKey)
+            val response = apiService.searchLocation(inputData, apiKey)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (!body.isNullOrEmpty()) {
-                    val weatherData: WeatherConditionResponse = body[0]
-                    val weatherJson = gson.toJson(weatherData)
+                    val searchData: WeatherLocationResponse = body[0]
+                    val resultJson = gson.toJson(searchData)
 
-                    if (weatherJson.toByteArray().size >= Data.MAX_DATA_BYTES) {
+                    if (resultJson.toByteArray().size >= Data.MAX_DATA_BYTES) {
                         Log.e(TAG, "Serialized weather data exceeds WorkManager limit!")
                         Result.failure(workDataOf(OUTPUT_SUCCESS to false, OUTPUT_ERROR_MESSAGE to "Response data too large"))
                     }
 
-                    Log.d(TAG, "Weather fetch successful. JSON size: ${weatherJson.toByteArray().size}")
+                    Log.d(TAG, "Location search successful. JSON size: ${resultJson.toByteArray().size}")
                     val outputData = workDataOf(
                         OUTPUT_SUCCESS to true,
-                        WEATHER_KEY to inputData,
-                        WEATHER_JSON to weatherJson // Put JSON string in output
+                        SEARCH_KEY to inputData,
+                        LOCATION_JSON to resultJson
                     )
                     Result.success(outputData)
                 } else {
-                    Log.w(TAG, "Weather fetch API success but body was null or empty.")
+                    Log.w(TAG, "Location search API success but body was null or empty.")
                     Result.failure(workDataOf(OUTPUT_SUCCESS to false, OUTPUT_ERROR_MESSAGE to "Empty response from server"))
                 }
             } else {
@@ -58,14 +58,14 @@ class WeatherWorker @AssistedInject constructor(@Assisted context: Context, @Ass
                 Result.failure(workDataOf(OUTPUT_ERROR_MESSAGE to errorMessage, OUTPUT_SUCCESS to false))
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error fetching weather", e)
+            Log.e(TAG, "Unexpected error searching location", e)
             Result.failure(workDataOf(OUTPUT_SUCCESS to false, OUTPUT_ERROR_MESSAGE to "Unexpected error: ${e.message}"))
         }
     }
 
     companion object {
-        const val WEATHER_KEY = "weather"
-        const val WEATHER_JSON = "weather_json"
+        const val SEARCH_KEY = "search"
+        const val LOCATION_JSON = "location_json"
         const val OUTPUT_SUCCESS = "SUCCESS" // Boolean
         const val OUTPUT_ERROR_MESSAGE = "ERROR_MSG" // Output for errors
         const val TAG = "WeatherFetchWorker"

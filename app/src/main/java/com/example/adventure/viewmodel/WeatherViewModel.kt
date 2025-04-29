@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.Constraints
-import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
@@ -13,12 +12,10 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.example.adventure.data.WeatherConditionResponse
 import com.example.adventure.data.WeatherLocationResponse
-import com.example.adventure.worker.LocationWorker
+import com.example.adventure.worker.LocationKeyWorker
 import com.example.adventure.worker.WeatherWorker
 import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,9 +23,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
 
@@ -96,8 +91,8 @@ class MainViewModel @Inject constructor(
             ExistingWorkPolicy.REPLACE,
             oneTimeWorkRequest)
 
-        oneTimeWorkRequest = OneTimeWorkRequestBuilder<LocationWorker>()
-            .setInputData(workDataOf(LocationWorker.LOCATION_KEY to locationKey))
+        oneTimeWorkRequest = OneTimeWorkRequestBuilder<LocationKeyWorker>()
+            .setInputData(workDataOf(LocationKeyWorker.LOCATION_KEY to locationKey))
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .build()
         locationWorkerUID = oneTimeWorkRequest.id
@@ -122,15 +117,15 @@ class MainViewModel @Inject constructor(
             when (workInfo.state) {
                 WorkInfo.State.SUCCEEDED -> {
                     val outputData = workInfo.outputData
-                    val success = outputData.getBoolean(LocationWorker.OUTPUT_SUCCESS, false)
+                    val success = outputData.getBoolean(LocationKeyWorker.OUTPUT_SUCCESS, false)
                     if (success) {
-                        val locationJson = outputData.getString(LocationWorker.LOCATION_JSON)
+                        val locationJson = outputData.getString(LocationKeyWorker.LOCATION_JSON)
                         val gson = gson.fromJson(locationJson, WeatherLocationResponse::class.java)
                         _uiState.update { it.copy(isLoadingLocationData = false, error = null, locationDisplayData = getLocationDisplayData(gson)) }
                     }
                 }
                 WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> {
-                    val errorMsg = workInfo.outputData.getString(LocationWorker.OUTPUT_ERROR_MESSAGE)
+                    val errorMsg = workInfo.outputData.getString(LocationKeyWorker.OUTPUT_ERROR_MESSAGE)
                         ?: "Unknown error"
                     Log.e("WeatherViewModel", "Work failed: $errorMsg")
                 }

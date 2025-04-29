@@ -22,4 +22,16 @@ interface ApiService {
         @Query("apikey") apiKey: String
     ) : Response<WeatherLocationResponse>
 
+    @GET("locations/v1/adminareas/{countryCode}")
+    suspend fun getUnitedStatesLocations(
+        @Path("countryCode") countryCode: String = "US",
+        @Query("apikey") apiKey: String
+    ) : Response<List<WeatherLocationResponse>>
+
+    @GET("locations/v1/search")
+    suspend fun searchLocation(
+        @Query("q") query: String = "",
+        @Query("apikey") apiKey: String
+    ) : Response<List<WeatherLocationResponse>>
+
 }

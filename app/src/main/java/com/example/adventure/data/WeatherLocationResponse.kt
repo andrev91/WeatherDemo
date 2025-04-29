@@ -12,11 +12,11 @@ data class WeatherLocationResponse(
     @SerializedName("EnglishName")
     val englishName: String?,
     @SerializedName("Region")
-    val region: Region?,
+    val region: Region? = null,
     @SerializedName("Country")
-    val country: Country?,
+    val country: Country? = null,
     @SerializedName("AdministrativeArea")
-    val administrativeArea: AdministrativeArea?
+    val administrativeArea: AdministrativeArea? = null
 )
 
 @Serializable
