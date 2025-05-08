@@ -13,8 +13,10 @@ import androidx.work.workDataOf
 import com.example.adventure.data.WeatherConditionResponse
 import com.example.adventure.data.WeatherLocationResponse
 import com.example.adventure.worker.LocationKeyWorker
+import com.example.adventure.worker.USLocationWorker
 import com.example.adventure.worker.WeatherWorker
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,11 +41,19 @@ data class LocationDisplayData(
     val country : String
 )
 
+data class LocationOption(
+    val key: String,
+    val value: String
+)
+
 data class WeatherUiState(
     val isLoadingWeatherData: Boolean = false,
     val isLoadingLocationData: Boolean = false,
+    val isLoadingLocationList: Boolean = false,
     val weatherDisplayData: WeatherDisplayData? = null,
     val locationDisplayData: LocationDisplayData? = null,
+    val availableLocations: List<LocationOption>? = null,
+    val selectedLocation: LocationOption? = null,
     val error: String? = null
 )
 
@@ -66,6 +76,7 @@ class MainViewModel @Inject constructor(
 
     private var weatherWorkerUId: UUID? = null
     private var locationWorkerUID: UUID? = null
+    private var locationListWorkerUID: UUID? = null
 
     private val locationKey = "225007"
 
@@ -77,152 +88,193 @@ class MainViewModel @Inject constructor(
         if (_uiState.value.isLoadingWeatherData || _uiState.value.isLoadingLocationData) return
 
         _uiState.update { it.copy(isLoadingWeatherData = true ,
-            isLoadingLocationData = true, error = null, weatherDisplayData = null) } //Initial Load
+            isLoadingLocationData = true, isLoadingLocationList = true,
+            error = null, weatherDisplayData = null, selectedLocation = null) } //Initial Load
 
-        var oneTimeWorkRequest = OneTimeWorkRequestBuilder<WeatherWorker>()
+        val weatherRequest = OneTimeWorkRequestBuilder<WeatherWorker>()
             .setInputData(
                 workDataOf(WeatherWorker.WEATHER_KEY to locationKey)
             ).setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .build()
-        weatherWorkerUId = oneTimeWorkRequest.id
-        observerWork(weatherWorkerUId!!)
+        weatherWorkerUId = weatherRequest.id
+        observerWeatherWork(weatherWorkerUId!!)
         workManager.enqueueUniqueWork(
             "WeatherLocation_$locationKey",
             ExistingWorkPolicy.REPLACE,
-            oneTimeWorkRequest)
+            weatherRequest)
 
-        oneTimeWorkRequest = OneTimeWorkRequestBuilder<LocationKeyWorker>()
+        val locationRequest = OneTimeWorkRequestBuilder<LocationKeyWorker>()
             .setInputData(workDataOf(LocationKeyWorker.LOCATION_KEY to locationKey))
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .build()
-        locationWorkerUID = oneTimeWorkRequest.id
-        observerWork(locationWorkerUID!!)
+        locationWorkerUID = locationRequest.id
+        observerLocationWork(locationWorkerUID!!)
         workManager.enqueueUniqueWork(
             "Location_$locationKey",
             ExistingWorkPolicy.REPLACE,
-            oneTimeWorkRequest)
+            locationRequest)
+        val locationListRequest = OneTimeWorkRequestBuilder<USLocationWorker>()
+            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+            .build()
+        locationListWorkerUID = locationListRequest.id
+        observerLocationListWork(locationWorkerUID!!)
+        workManager.enqueueUniqueWork(
+            "Location_$locationKey",
+            ExistingWorkPolicy.REPLACE,
+            locationListRequest)
     }
 
-    private fun observerWork(uuid: UUID) {
+    private fun observerWeatherWork(uuid: UUID) {
         workManager.getWorkInfoByIdFlow(uuid)
             .filterNotNull()
-            .filter { it.id == weatherWorkerUId || it.id == locationWorkerUID }
-            .onEach { workInfo -> process(workInfo) }
+            .filter { it.id == weatherWorkerUId }
+            .onEach { workInfo -> processWeather(workInfo) }
             .launchIn(viewModelScope)
     }
 
-    private fun process(workInfo: WorkInfo) {
-        Log.d("WeatherViewModel", "Processing WorkInfo: ID=${workInfo.id}, State=${workInfo.state}")
-        if (workInfo.id == locationWorkerUID) {
-            when (workInfo.state) {
-                WorkInfo.State.SUCCEEDED -> {
-                    val outputData = workInfo.outputData
-                    val success = outputData.getBoolean(LocationKeyWorker.OUTPUT_SUCCESS, false)
-                    if (success) {
-                        val locationJson = outputData.getString(LocationKeyWorker.LOCATION_JSON)
-                        val gson = gson.fromJson(locationJson, WeatherLocationResponse::class.java)
-                        _uiState.update { it.copy(isLoadingLocationData = false, error = null, locationDisplayData = getLocationDisplayData(gson)) }
-                    }
-                }
-                WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> {
-                    val errorMsg = workInfo.outputData.getString(LocationKeyWorker.OUTPUT_ERROR_MESSAGE)
-                        ?: "Unknown error"
-                    Log.e("WeatherViewModel", "Work failed: $errorMsg")
-                }
-                WorkInfo.State.RUNNING, WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED -> {
-                    Log.d("WeatherViewModel", "Work is ${workInfo.state}.")
-                    // Ensure loading is true if work is active
-                    if (!_uiState.value.isLoadingLocationData) { // Avoid unnecessary updates
-                        _uiState.update { it.copy(isLoadingLocationData = true, error = null) }
-                    }
-                }
-            }
-        } else if (workInfo.id == weatherWorkerUId) {
-            when (workInfo.state) {
-                WorkInfo.State.SUCCEEDED -> {
-                    val outputData = workInfo.outputData
-                    val success = outputData.getBoolean(WeatherWorker.OUTPUT_SUCCESS, false)
+    private fun observerLocationWork(uuid: UUID) {
+        workManager.getWorkInfoByIdFlow(uuid)
+            .filterNotNull()
+            .filter { it.id == locationWorkerUID }
+            .onEach { workInfo -> processLocation(workInfo) }
+            .launchIn(viewModelScope)
+    }
 
-                    if (success) {
-                        val weatherJson = outputData.getString(WeatherWorker.WEATHER_JSON)
-                        if (weatherJson != null) {
-                            try {
-                                // --- Parse JSON from Worker Output ---
-                                val response =
-                                    gson.fromJson(weatherJson, WeatherConditionResponse::class.java)
-                                _uiState.update {
-                                    it.copy(
-                                        isLoadingWeatherData = false,
-                                        weatherDisplayData = mapResponseToDisplayData(response), // Use helper
-                                        error = null
-                                    )
-                                }
-                                Log.d(
-                                    "WeatherViewModel",
-                                    "Successfully parsed weather data from worker."
-                                )
-                            } catch (e: Exception) {
-                                Log.e(
-                                    "WeatherViewModel",
-                                    "Error parsing JSON from worker output",
-                                    e
-                                )
-                                _uiState.update {
-                                    it.copy(
-                                        isLoadingWeatherData = false,
-                                        error = "Failed to parse weather data."
-                                    )
-                                }
-                            }
-                        } else {
-                            Log.e("WeatherViewModel", "Work succeeded but weather JSON was null.")
+    private fun observerLocationListWork(uuid: UUID) {
+        workManager.getWorkInfoByIdFlow(uuid)
+            .filterNotNull()
+            .filter { it.id == locationListWorkerUID }
+            .onEach { workInfo -> processLocationList(workInfo) }
+            .launchIn(viewModelScope)
+    }
+
+    private fun processWeather(workInfo: WorkInfo) {
+        when (workInfo.state) {
+            WorkInfo.State.SUCCEEDED -> {
+                val outputData = workInfo.outputData
+                val success = outputData.getBoolean(WeatherWorker.OUTPUT_SUCCESS, false)
+
+                if (success) {
+                    val weatherJson = outputData.getString(WeatherWorker.WEATHER_JSON)
+                    if (weatherJson != null) {
+                        try {
+                            // --- Parse JSON from Worker Output ---
+                            val response =
+                                gson.fromJson(weatherJson, WeatherConditionResponse::class.java)
                             _uiState.update {
                                 it.copy(
                                     isLoadingWeatherData = false,
-                                    error = "Received empty success response."
+                                    weatherDisplayData = mapResponseToDisplayData(response), // Use helper
+                                    error = null
+                                )
+                            }
+                            Log.d("WeatherViewModel","Successfully parsed weather data from worker.")
+                        } catch (e: Exception) {
+                            Log.e("WeatherViewModel","Error parsing JSON from worker output",e)
+                            _uiState.update {
+                                it.copy(
+                                    isLoadingWeatherData = false,
+                                    error = "Failed to parse weather data."
                                 )
                             }
                         }
                     } else {
-                        // Worker finished but reported internal failure
-                        val errorMsg = outputData.getString(WeatherWorker.OUTPUT_ERROR_MESSAGE)
-                            ?: "Worker reported failure."
-                        Log.e(
-                            "WeatherViewModel",
-                            "Work succeeded but internal flag was false: $errorMsg"
-                        )
-                        _uiState.update { it.copy(isLoadingWeatherData = false, error = errorMsg) }
+                        Log.e("WeatherViewModel", "Work succeeded but weather JSON was null.")
+                        _uiState.update {
+                            it.copy(
+                                isLoadingWeatherData = false,
+                                error = "Received empty success response."
+                            )
+                        }
                     }
-                    weatherWorkerUId = null // Reset tracked ID once finished
-                }
-
-                WorkInfo.State.FAILED -> {
-                    val errorMsg = workInfo.outputData.getString(WeatherWorker.OUTPUT_ERROR_MESSAGE)
-                        ?: "Unknown error"
-                    Log.e("WeatherViewModel", "Work failed: $errorMsg")
+                } else {
+                    // Worker finished but reported internal failure
+                    val errorMsg = outputData.getString(WeatherWorker.OUTPUT_ERROR_MESSAGE)
+                        ?: "Worker reported failure."
+                    Log.e(
+                        "WeatherViewModel",
+                        "Work succeeded but internal flag was false: $errorMsg"
+                    )
                     _uiState.update { it.copy(isLoadingWeatherData = false, error = errorMsg) }
-                    weatherWorkerUId = null
                 }
+                weatherWorkerUId = null // Reset tracked ID once finished
+            }
 
-                WorkInfo.State.CANCELLED -> {
-                    Log.w("WeatherViewModel", "Work cancelled.")
-                    _uiState.update {
-                        it.copy(
-                            isLoadingWeatherData = false,
-                            error = "Weather fetch cancelled."
-                        )
-                    }
-                    weatherWorkerUId = null
+            WorkInfo.State.FAILED -> {
+                val errorMsg = workInfo.outputData.getString(WeatherWorker.OUTPUT_ERROR_MESSAGE)
+                    ?: "Unknown error"
+                Log.e("WeatherViewModel", "Work failed: $errorMsg")
+                _uiState.update { it.copy(isLoadingWeatherData = false, error = errorMsg) }
+                weatherWorkerUId = null
+            }
+
+            WorkInfo.State.CANCELLED -> {
+                Log.w("WeatherViewModel", "Work cancelled.")
+                _uiState.update {
+                    it.copy(
+                        isLoadingWeatherData = false,
+                        error = "Weather fetch cancelled."
+                    )
                 }
+                weatherWorkerUId = null
+            }
 
-                WorkInfo.State.RUNNING, WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED -> {
-                    Log.d("WeatherViewModel", "Work is ${workInfo.state}.")
-                    // Ensure loading is true if work is active
-                    if (!_uiState.value.isLoadingWeatherData) { // Avoid unnecessary updates
-                        _uiState.update { it.copy(isLoadingWeatherData = true, error = null) }
-                    }
+            WorkInfo.State.RUNNING, WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED -> {
+                Log.d("WeatherViewModel", "Work is ${workInfo.state}.")
+                // Ensure loading is true if work is active
+                if (!_uiState.value.isLoadingWeatherData) { // Avoid unnecessary updates
+                    _uiState.update { it.copy(isLoadingWeatherData = true, error = null) }
                 }
             }
+        }
+    }
+
+    private fun processLocation(workInfo: WorkInfo) {
+        when (workInfo.state) {
+            WorkInfo.State.SUCCEEDED -> {
+                val outputData = workInfo.outputData
+                val success = outputData.getBoolean(LocationKeyWorker.OUTPUT_SUCCESS, false)
+                if (success) {
+                    val locationJson = outputData.getString(LocationKeyWorker.LOCATION_JSON)
+                    val gson = gson.fromJson(locationJson, WeatherLocationResponse::class.java)
+                    _uiState.update { it.copy(isLoadingLocationData = false, error = null, locationDisplayData = getLocationDisplayData(gson)) }
+                }
+            }
+            WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> {
+                val errorMsg = workInfo.outputData.getString(LocationKeyWorker.OUTPUT_ERROR_MESSAGE)
+                    ?: "Unknown error"
+                Log.e("WeatherViewModel", "Work failed: $errorMsg")
+            }
+            WorkInfo.State.RUNNING, WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED -> {
+                Log.d("WeatherViewModel", "Work is ${workInfo.state}.")
+                // Ensure loading is true if work is active
+                if (!_uiState.value.isLoadingLocationData) { // Avoid unnecessary updates
+                    _uiState.update { it.copy(isLoadingLocationData = true, error = null) }
+                }
+            }
+        }
+    }
+
+    private fun processLocationList(workInfo: WorkInfo) {
+        when (workInfo.state) {
+            WorkInfo.State.SUCCEEDED -> {
+                val outputData = workInfo.outputData
+                val success = outputData.getBoolean(USLocationWorker.OUTPUT_SUCCESS, false)
+                if (success) {
+                    val locationJson = outputData.getString(USLocationWorker.LOCATION_JSON)
+                    val type = object : TypeToken<List<WeatherLocationResponse>>() {}.type
+                    val data = gson.fromJson<List<WeatherLocationResponse>>(locationJson, type)
+                    _uiState.update { it.copy(availableLocations = data.map { location -> getLocationOptionData(location) },
+                        isLoadingLocationList = false, error = null) }
+                }
+            }
+            WorkInfo.State.FAILED -> {
+                val errorMsg = workInfo.outputData.getString(USLocationWorker.OUTPUT_ERROR_MESSAGE)
+                    ?: "Unknown error"
+                Log.e("WeatherViewModel", "Work failed: $errorMsg")
+
+            }
+            else -> {}
         }
     }
 
@@ -238,6 +290,12 @@ class MainViewModel @Inject constructor(
             temperature = formattedTemp,
             observedAt = observedTime
         )
+    }
+
+    private fun getLocationOptionData(response: WeatherLocationResponse) :LocationOption {
+        return LocationOption(
+            value = response.localizedName ?: response.englishName ?: "Unknown City",
+            key = response.key ?: "Unknown Key")
     }
 
     private fun getLocationDisplayData(response: WeatherLocationResponse) :LocationDisplayData {
