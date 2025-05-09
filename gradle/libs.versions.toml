@@ -1,0 +1,15 @@
+[versions]
+googleHiltCompiler = "2.56.2"
+hiltAndroidTesting = "2.56.2"
+hiltCompiler = "2.55"
+workRuntimeKtx = "2.10.0"
+
+[libraries]
+dagger-hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltCompiler" }
+hilt-android-testing-v2511 = { module = "com.google.dagger:hilt-android-testing", version.ref = "hiltAndroidTesting" }
+hilt-compiler-v2561 = { module = "com.google.dagger:hilt-compiler", version.ref = "googleHiltCompiler" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
+
+[plugins]
+
+

@@ -15,7 +15,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
-    id("dagger.hilt.android.plugin")
+    id("com.google.dagger.hilt.android")
     kotlin("kapt")
 }
 
@@ -68,9 +68,9 @@ dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
 
     // Hilt/Dagger
-    implementation("com.google.dagger:hilt-android:2.51")
+    implementation("com.google.dagger:hilt-android:2.56.2")
     implementation(libs.androidx.work.runtime.ktx)
-    kapt("com.google.dagger:hilt-compiler:2.51.1")
+    kapt("com.google.dagger:hilt-compiler:2.56.2")
 
     // Lifecycle libraries
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
@@ -94,9 +94,9 @@ dependencies {
     kapt("androidx.hilt:hilt-compiler:1.2.0") // Hilt Work compiler (often needed)
 
     // Testing libraries
-    kaptTest("com.google.dagger:hilt-compiler:2.51")
-    kaptAndroidTest("com.google.datter:hilt-compiler:2.51")
-    testImplementation("com.google.dagger:hilt-android-testing:2.51")
+    kaptTest(libs.hilt.compiler.v2561)
+    kaptAndroidTest(libs.dagger.hilt.compiler)
+    testImplementation(libs.hilt.android.testing.v2511)
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation(platform("androidx.compose:compose-bom:2025.03.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
