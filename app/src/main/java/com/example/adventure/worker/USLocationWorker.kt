@@ -18,9 +18,9 @@ import kotlinx.coroutines.withContext
 
 @HiltWorker
 class USLocationWorker @AssistedInject constructor(@Assisted context: Context, @Assisted params: WorkerParameters,
-                                                   private val apiService: ApiService,
-                                                   private val gson: Gson,
-                                                   @NetworkModule.ApiKey private val apiKey: String // Inject API key safely
+   private val apiService: ApiService,
+   private val gson: Gson,
+   @NetworkModule.ApiKey private val apiKey: String // Inject API key safely
 ): CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
@@ -60,6 +60,5 @@ class USLocationWorker @AssistedInject constructor(@Assisted context: Context, @
         const val OUTPUT_SUCCESS = "SUCCESS" // Boolean
         const val OUTPUT_ERROR_MESSAGE = "ERROR_MSG" // Output for errors
         const val TAG = "USLocationWorker"
-
     }
 }

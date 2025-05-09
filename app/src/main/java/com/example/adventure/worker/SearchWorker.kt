@@ -18,9 +18,9 @@ import kotlinx.coroutines.withContext
 
 @HiltWorker
 class SearchWorker @AssistedInject constructor(@Assisted context: Context, @Assisted params: WorkerParameters,
-                                               private val apiService: ApiService,
-                                               private val gson: Gson,
-                                               @NetworkModule.ApiKey private val apiKey: String // Inject API key safely
+   private val apiService: ApiService,
+   private val gson: Gson,
+   @NetworkModule.ApiKey private val apiKey: String // Inject API key safely
     ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
@@ -28,8 +28,8 @@ class SearchWorker @AssistedInject constructor(@Assisted context: Context, @Assi
             val inputData = inputData.getString(SEARCH_KEY)?: return@withContext Result.failure(
                 workDataOf(OUTPUT_SUCCESS to false, OUTPUT_ERROR_MESSAGE to "No input data provided")
             )
-
-            val response = apiService.searchLocation(inputData, apiKey)
+            // Search for location in the US
+            val response = apiService.searchLocation("$inputData, US", apiKey)
             if (response.isSuccessful) {
                 val body = response.body()
                 if (!body.isNullOrEmpty()) {
