@@ -13,6 +13,7 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.example.adventure.data.WeatherConditionResponse
 import com.example.adventure.data.WeatherLocationResponse
+import com.example.adventure.state.WeatherUiState
 import com.example.adventure.worker.LocationKeyWorker
 import com.example.adventure.worker.SearchWorker
 import com.example.adventure.worker.USLocationWorker
@@ -32,10 +33,21 @@ import java.util.UUID
 import javax.inject.Inject
 
 data class WeatherDisplayData(
-    val temperature: String,
+    val temperatureFahrenheit : String,
+    val temperatureCelsius : String,
     val weatherDescription: String,
     val observedAt : String,
 )
+
+enum class UnitType {
+    CELSIUS, FAHRENHEIT;
+    override fun toString(): String {
+        return when (this) {
+            CELSIUS -> "Celsius"
+            FAHRENHEIT -> "Fahrenheit"
+        }
+    }
+}
 
 data class LocationDisplayData(
     val locationName: String,
@@ -46,17 +58,6 @@ data class LocationDisplayData(
 data class LocationOption(
     val key: String,
     val value: String
-)
-
-data class WeatherUiState(
-    val isLoadingWeatherData: Boolean = false,
-    val isLoadingLocationData: Boolean = false,
-    val isLoadingLocationList: Boolean = false,
-    val weatherDisplayData: WeatherDisplayData? = null,
-    val locationDisplayData: LocationDisplayData? = null,
-    val availableLocations: List<LocationOption>? = null,
-    val selectedLocation: LocationOption? = null,
-    val error: String? = null
 )
 
 //sealed class testChannel {
@@ -329,14 +330,14 @@ class MainViewModel @Inject constructor(
 
     // Helper function to map the API response (remains the same logic)
     private fun mapResponseToDisplayData(response: WeatherConditionResponse): WeatherDisplayData {
-        val tempValue = response.temperature?.metric?.value ?: response.temperature?.imperial?.value ?: "--"
-        val tempUnit = response.temperature?.metric?.unit ?: response.temperature?.imperial?.unit ?: ""
-        val formattedTemp = "$tempValue°$tempUnit"
+        val formattedTempFahrenheit = "${response.temperature?.imperial?.value ?: "--"}°${response.temperature?.imperial?.unit ?: ""}"
+        val formattedTempCelsius = "${response.temperature?.metric?.value ?: "--"}°${response.temperature?.metric?.unit ?: ""}"
         val observedTime = response.localObservationDateTime?.substringAfter("T")?.substringBefore("+")?.substringBefore("-") ?: "N/A"
 
         return WeatherDisplayData(
             weatherDescription = response.weatherText ?: "No description",
-            temperature = formattedTemp,
+            temperatureFahrenheit = formattedTempFahrenheit,
+            temperatureCelsius = formattedTempCelsius,
             observedAt = observedTime
         )
     }

@@ -3,11 +3,14 @@ package com.example.adventure.ui.screen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -17,6 +20,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -29,12 +33,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.adventure.state.WeatherUiState
 import com.example.adventure.ui.theme.AdventureTheme
 import com.example.adventure.viewmodel.LocationDisplayData
 import com.example.adventure.viewmodel.LocationOption
 import com.example.adventure.viewmodel.MainViewModel
+import com.example.adventure.viewmodel.UnitType
 import com.example.adventure.viewmodel.WeatherDisplayData
-import com.example.adventure.viewmodel.WeatherUiState
 
 const val TAG_LOCATION_DROPDOWN = "LocationDropdown"
 const val TAG_WEATHER_DESC = "WeatherDescriptionText"
@@ -85,14 +90,46 @@ fun WeatherScreenContent(uiState: WeatherUiState,
             Spacer(modifier = Modifier.height(8.dp))
         }
         if (uiState.weatherDisplayData != null) {
-            WeatherDetails(data = uiState.weatherDisplayData)
+            WeatherDetails(data = uiState.weatherDisplayData, unit = uiState.temperatureUnit)
             Spacer(modifier = Modifier.height(8.dp))
         }
         Button(onClick = onRefreshClicked, modifier = Modifier.testTag(TAG_REFRESH_BUTTON)) {
             Text(text = "Fetch Weather Data")
         }
     }
+    RadioButtonSelection(uiState)
 }
+
+@Composable
+fun RadioButtonSelection(uiState: WeatherUiState) {
+    val radioOptions = UnitType.entries.map { it.toString() }
+    val (selectedOption, onOptionSelected) = remember { mutableStateOf(radioOptions[0]) }
+    Column(Modifier.selectableGroup().padding(bottom = 80.dp),
+        verticalArrangement = Arrangement.Bottom) {
+        radioOptions.forEach { option ->
+            Row(modifier = Modifier.fillMaxWidth().height(56.dp)
+                .selectable(
+                    selected = (option == selectedOption),
+                    onClick = {
+                        onOptionSelected(option)
+                        uiState.temperatureUnit = UnitType.valueOf(option.toString().uppercase())
+                    }
+                ).padding(16.dp), horizontalArrangement = Arrangement.Center) {
+                RadioButton(
+                    modifier = Modifier.testTag(option) ,
+                    selected = (option == selectedOption),
+                    onClick = null // null recommended for accessibility with screen readers
+                )
+                Text(
+                    text = option.toString(),
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(start = 16.dp)
+                )
+            }
+        }
+    }
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -115,7 +152,7 @@ fun DropDownLocations(uiState: WeatherUiState, onLocationSelected: (LocationOpti
                 label = { Text("Location") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier
-                    .menuAnchor(MenuAnchorType.PrimaryEditable, expanded)
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
                     .fillMaxWidth(),
                 enabled = !uiState.availableLocations.isNullOrEmpty() && !uiState.isLoadingLocationList
             )
@@ -147,7 +184,7 @@ fun DropDownLocations(uiState: WeatherUiState, onLocationSelected: (LocationOpti
 }
 
 @Composable
-fun WeatherDetails(data: WeatherDisplayData) {
+fun WeatherDetails(data: WeatherDisplayData, unit : UnitType = UnitType.CELSIUS) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = data.weatherDescription,
@@ -156,7 +193,8 @@ fun WeatherDetails(data: WeatherDisplayData) {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Temperature: ${data.temperature}",
+            text = "Temperature: " + if (unit == UnitType.CELSIUS) data.temperatureCelsius
+            else data.temperatureFahrenheit,
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.testTag(TAG_WEATHER_TEMP)
         )
@@ -207,7 +245,7 @@ fun PreviewWeatherScreenContent_Success() {
         WeatherScreenContent(
             uiState = WeatherUiState(
                 isLoadingWeatherData = true,
-                weatherDisplayData = WeatherDisplayData("Sunny", "25°C", "14:30")
+                weatherDisplayData = WeatherDisplayData("Sunny", "25°C", "77°F","14:30")
             ),
             onLocationSelected = { LocationOption("349727","New York") },
             onRefreshClicked = {}
