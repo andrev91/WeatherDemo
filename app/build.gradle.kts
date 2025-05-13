@@ -16,6 +16,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("com.google.dagger.hilt.android")
+    id("dagger.hilt.android.plugin")
     kotlin("kapt")
 }
 
@@ -30,7 +31,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.example.adventure.TestRunner"
 
         val accuApiKey = getApiKey("ACCUWEATHER_API_KEY")
         // Add quotes around the string value for BuildConfig field
@@ -81,10 +82,12 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.10.1")
     implementation(platform("androidx.compose:compose-bom:2025.03.01"))
     implementation("androidx.compose.ui:ui")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     implementation("androidx.compose.ui:ui-graphics")
     debugImplementation("androidx.compose.ui:ui-tooling")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    debugImplementation(libs.androidx.ui.test.manifest)
+    debugImplementation(libs.ui.tooling)
     implementation("androidx.compose.material3:material3")
 
     // Serialization libraries
@@ -97,12 +100,13 @@ dependencies {
     kaptTest(libs.hilt.compiler.v2561)
     kaptAndroidTest(libs.dagger.hilt.compiler)
     testImplementation(libs.hilt.android.testing.v2511)
-    testImplementation("junit:junit:4.13.2")
+    testImplementation(libs.junit)
     androidTestImplementation(platform("androidx.compose:compose-bom:2025.03.01"))
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-    androidTestImplementation("com.google.dagger:hilt-android-testing:2.51")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation(libs.hilt.android.testing.v2511)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.runner)
 
     //API
     implementation("com.squareup.okhttp3:okhttp:4.12.0")

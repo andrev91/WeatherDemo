@@ -18,7 +18,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -32,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.adventure.state.WeatherUiState
 import com.example.adventure.ui.theme.AdventureTheme
@@ -50,7 +50,7 @@ const val TAG_LOCATION_DESC = "LocationDescriptionText"
 const val TAG_REFRESH_BUTTON = "RefreshButton"
 
 @Composable
-fun WeatherScreen(viewModel: MainViewModel) {
+fun WeatherScreen(viewModel: MainViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     WeatherScreenContent(uiState = uiState,
@@ -152,7 +152,8 @@ fun DropDownLocations(uiState: WeatherUiState, onLocationSelected: (LocationOpti
                 label = { Text("Location") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier
-                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
+                    .menuAnchor()
+                    //.menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
                     .fillMaxWidth(),
                 enabled = !uiState.availableLocations.isNullOrEmpty() && !uiState.isLoadingLocationList
             )
