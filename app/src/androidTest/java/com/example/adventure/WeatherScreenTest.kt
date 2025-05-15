@@ -1,6 +1,7 @@
 package com.example.adventure
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -41,6 +42,20 @@ class WeatherScreenTest {
         }
     }
 
+    private fun waitForInitialLoad(milliseconds : Long = 20000L) {
+        composeTestRule.waitUntil(milliseconds) {
+            var isEnabled = false
+            try {
+                composeTestRule.onNodeWithTag(TAG_LOCATION_DROPDOWN).assertIsEnabled()
+                isEnabled = true
+            } catch (e : AssertionError) {
+                //Not enabled yet
+            }
+            isEnabled
+        }
+        println("Location List loaded")
+    }
+
     @Test
     fun initialState_ShowSelectionLocationOrLoading() {
         composeTestRule.onNodeWithTag(TAG_LOCATION_DROPDOWN).assertIsDisplayed()
@@ -60,21 +75,9 @@ class WeatherScreenTest {
 
     @Test
     fun selectLocation_ThenFetchesAndDisplaysData() {
-        composeTestRule.waitUntil(timeoutMillis = 20000L) {
-            var hasItems = false
-            try {
-                composeTestRule.onNodeWithTag(TAG_LOCATION_DROPDOWN).performClick()
-                composeTestRule.onNodeWithText("New York", useUnmergedTree = true).assertExists()
-                hasItems = true
-            } catch (e : Exception) {
-                //Ignore if not found
-            }
-            composeTestRule.onNodeWithTag(TAG_LOCATION_DROPDOWN).performClick()
-            hasItems
-        }
-        println("Location List loaded")
-
+        waitForInitialLoad()
         composeTestRule.onNodeWithTag(TAG_LOCATION_DROPDOWN).performClick()
+        composeTestRule.waitUntil { composeTestRule.onAllNodesWithTag(TAG_LOCATION_DROPDOWN, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
         composeTestRule.onNodeWithText("New York", useUnmergedTree = true).performScrollTo().performClick()
         composeTestRule.onNodeWithTag(TAG_REFRESH_BUTTON).performClick()
 
