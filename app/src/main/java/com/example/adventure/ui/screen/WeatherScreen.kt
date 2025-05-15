@@ -58,7 +58,8 @@ fun WeatherScreen(viewModel: MainViewModel = hiltViewModel()) {
         onRefreshClicked = {
             uiState.selectedLocation?.let {
                 viewModel.searchLocation()
-            } ?: viewModel.fetchWeatherAndLocation() }
+            }
+        }
     )
 }
 
@@ -213,12 +214,12 @@ fun LocationDetails(data: LocationDisplayData) {
         Text(
             text = data.locationName,
             style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.testTag(TAG_LOCATION_DESC)
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "Country: ${data.country}",
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.testTag(TAG_LOCATION_DESC)
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(

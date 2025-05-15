@@ -107,6 +107,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.runner)
+    androidTestImplementation(libs.androidx.work.testing)
 
     //API
     implementation("com.squareup.okhttp3:okhttp:4.12.0")

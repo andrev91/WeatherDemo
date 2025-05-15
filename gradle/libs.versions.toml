@@ -8,7 +8,7 @@ junit = "4.13.2"
 junitVersion = "1.2.1"
 runnerVersion = "1.6.2"
 uiToolingVersion = "1.8.1"
-workRuntimeKtx = "2.10.0"
+androidxWork = "2.9.0"
 
 [libraries]
 androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
@@ -20,7 +20,8 @@ compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeB
 dagger-hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltCompiler" }
 hilt-android-testing-v2511 = { module = "com.google.dagger:hilt-android-testing", version.ref = "hiltAndroidTesting" }
 hilt-compiler-v2561 = { module = "com.google.dagger:hilt-compiler", version.ref = "googleHiltCompiler" }
-androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "androidxWork" }
+androidx-work-testing = { group = "androidx.work", name = "work-testing", version.ref = "androidxWork" }
 junit = { module = "junit:junit", version.ref = "junit" }
 ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "uiToolingVersion" }
 

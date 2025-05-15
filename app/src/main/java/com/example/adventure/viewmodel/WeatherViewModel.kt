@@ -93,12 +93,7 @@ class MainViewModel @Inject constructor(
         _uiState.update { it.copy(selectedLocation = location, weatherDisplayData = null, locationDisplayData = null, error = null) }
     }
 
-    fun fetchWeatherAndLocation(locationKey: String = "") {
-        if (_uiState.value.isLoadingLocationData || _uiState.value.isLoadingWeatherData) return
-
-        _uiState.update { it.copy(isLoadingWeatherData = true ,
-            isLoadingLocationData = true, error = null, weatherDisplayData = null, locationDisplayData = null) }
-
+    private fun fetchWeatherAndLocation(locationKey: String = "") {
         val weatherRequest = OneTimeWorkRequestBuilder<WeatherWorker>()
             .setInputData(
                 workDataOf(WeatherWorker.WEATHER_KEY to locationKey.ifEmpty { this.locationKey })
@@ -124,6 +119,10 @@ class MainViewModel @Inject constructor(
     }
 
     fun searchLocation() {
+        if (_uiState.value.isLoadingLocationData || _uiState.value.isLoadingWeatherData) return
+        _uiState.update { it.copy(isLoadingWeatherData = true ,
+            isLoadingLocationData = true, error = null, weatherDisplayData = null, locationDisplayData = null) }
+
         val location = uiState.value.selectedLocation?.value ?: return
         val searchRequest = OneTimeWorkRequestBuilder<SearchWorker>()
             .setInputData(workDataOf(SearchWorker.SEARCH_KEY to location))
