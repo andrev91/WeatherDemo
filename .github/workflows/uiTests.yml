@@ -35,7 +35,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Install PulseAudio library
+      - name: Install Emulator System libraries
         if: runner.os == 'Linux' # Only run on Linux runners
         run: |
           sudo apt-get update
@@ -50,6 +50,22 @@ jobs:
               libxi6 \
               libgl1 \
               mesa-utils
+
+      - name: Check Android SDK and ADB Setup
+        if: runner.os == 'Linux'
+        run: |
+          echo "ANDROID_SDK_ROOT: $ANDROID_SDK_ROOT"
+          echo "PATH: $PATH"
+          echo "--- ADB Version ---"
+          adb version || echo "ADB not found or version command failed"
+          echo "--- Killing any existing ADB server (ignore errors if none is running) ---"
+          adb kill-server || true
+          echo "--- Starting ADB server ---"
+          adb start-server
+          echo "--- Checking ADB devices (should be empty or show host features) ---"
+          adb devices -l
+          echo "--- Checking processes on port 5037 (if lsof is available) ---"
+          sudo lsof -i :5037 || echo "lsof not available or no process on port 5037"
         
       - name: Enable KVM
         if: runner.os == 'Linux'
