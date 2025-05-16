@@ -60,17 +60,16 @@ jobs:
 
       - name: Run UI Tests on Emulator
         uses: reactivecircus/android-emulator-runner@v2
-        env:
-          QT_QPA_PLATFORM: offscreen
         with:
-          api-level: 31 # Specify the API level for the emulator
+          api-level: 34 # Specify the API level for the emulator
           target: google_apis # Or 'default', 'aosp_atd', etc. 'google_apis' includes Google Play Services.
           arch: x86_64 # Or 'x86', 'arm64-v8a' (though arm may be slower without specific runners)
-          profile: Nexus 6 # Optional: specify a device profile
           create-args: "--no-window" # Optional: arguments for emulator creation
           emulator-options: "-no-snapshot-load -no-snapshot-save -no-audio -no-boot-anim -camera-back none -camera-front none" # Optional: disable features to speed up boot and reduce flakiness
           disable-animations: true # Recommended for UI tests
           script: ./gradlew connectedDebugAndroidTest # Or your specific Gradle task for UI tests, e.g., connectedDebugAndroidTest
+        env:
+          QT_QPA_PLATFORM: offscreen
 
       #- name: Upload Test Reports (Optional)
        # if: always() # Ensure this step runs even if tests fail
