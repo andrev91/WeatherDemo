@@ -39,7 +39,17 @@ jobs:
         if: runner.os == 'Linux' # Only run on Linux runners
         run: |
           sudo apt-get update
-          sudo apt-get install -y libpulse0
+           sudo apt-get install -y \
+              libpulse0 \
+              libxcb-cursor0 \
+              libxkbcommon0 \
+              libxcomposite1 \
+              libxdamage1 \
+              libxrandr2 \
+              libxtst6 \
+              libxi6 \
+              libgl1 \
+              mesa-utils
         
       - name: Enable KVM
         if: runner.os == 'Linux'
@@ -50,6 +60,8 @@ jobs:
 
       - name: Run UI Tests on Emulator
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          QT_QPA_PLATFORM: offscreen
         with:
           api-level: 31 # Specify the API level for the emulator
           target: google_apis # Or 'default', 'aosp_atd', etc. 'google_apis' includes Google Play Services.
