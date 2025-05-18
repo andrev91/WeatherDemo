@@ -23,7 +23,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Create local.properties for API key
-        run: echo "ACCUWEATHER_API_KEY=\"${{ secrets.ACCUWEATHER_API_KEY }}\"" > local.properties
+        run: echo "ACCUWEATHER_API_KEY=${{ secrets.ACCUWEATHER_API_KEY }}" > local.properties
 
       - name: Enable KVM
         run: |
