@@ -46,7 +46,7 @@ class WeatherScreenTest {
         composeTestRule.waitUntil(milliseconds) {
             var isEnabled = false
             try {
-                composeTestRule.onNodeWithTag(TAG_LOCATION_DROPDOWN).assertIsEnabled()
+                composeTestRule.onNodeWithTag(TAG_LOCATION_DROPDOWN_OUTLINE).assertIsEnabled()
                 isEnabled = true
             } catch (e : AssertionError) {
                 //Not enabled yet

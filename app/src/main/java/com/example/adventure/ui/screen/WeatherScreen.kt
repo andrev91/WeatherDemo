@@ -42,6 +42,7 @@ import com.example.adventure.viewmodel.UnitType
 import com.example.adventure.viewmodel.WeatherDisplayData
 
 const val TAG_LOCATION_DROPDOWN = "LocationDropdown"
+const val TAG_LOCATION_DROPDOWN_OUTLINE = "LocationDropdownOutline"
 const val TAG_WEATHER_DESC = "WeatherDescriptionText"
 const val TAG_WEATHER_TEMP = "WeatherTemperatureText"
 const val TAG_ERROR_TEXT = "ErrorText"
@@ -141,7 +142,7 @@ fun DropDownLocations(uiState: WeatherUiState, onLocationSelected: (LocationOpti
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = {
-                if (uiState.availableLocations!!.isNotEmpty() && !uiState.isLoadingLocationList) {
+                if (!uiState.availableLocations.isNullOrEmpty() && !uiState.isLoadingLocationList) {
                     expanded = !expanded
                 }
             }
@@ -155,7 +156,8 @@ fun DropDownLocations(uiState: WeatherUiState, onLocationSelected: (LocationOpti
                 modifier = Modifier
                     .menuAnchor()
                     //.menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .testTag(TAG_LOCATION_DROPDOWN_OUTLINE),
                 enabled = !uiState.availableLocations.isNullOrEmpty() && !uiState.isLoadingLocationList
             )
             ExposedDropdownMenu(
