@@ -83,9 +83,22 @@ class WeatherScreenTest {
 
         waitForLoad()
 
-        composeTestRule.onNodeWithTag(TAG_LOCATION_DESC, useUnmergedTree = true).assertIsDisplayed()
-            .assertTextContains("New York", substring = true, ignoreCase = true)
-        composeTestRule.onNodeWithTag(TAG_WEATHER_TEMP, useUnmergedTree = true).assertIsDisplayed()
+        try {
+            composeTestRule.onNodeWithTag(TAG_LOCATION_DESC, useUnmergedTree = true)
+                .assertIsDisplayed()
+                .assertTextContains("New York", substring = true, ignoreCase = true)
+        } catch (e : AssertionError) {
+            println("Location description not found and/or New York is not in the text.")
+            throw AssertionError(e.message, e)
+        }
+
+        try {
+            composeTestRule.onNodeWithTag(TAG_WEATHER_TEMP, useUnmergedTree = true)
+                .assertIsDisplayed()
+        } catch (e : AssertionError) {
+            println("Weather temperature not found.")
+            throw AssertionError(e.message, e)
+        }
 
         composeTestRule.onNodeWithTag(TAG_ERROR_TEXT).assertDoesNotExist()
     }
