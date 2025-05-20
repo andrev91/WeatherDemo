@@ -33,7 +33,7 @@
     * Gson/Moshi - For parsing JSON responses.
 * **Asynchronous Programming:**
     * Kotlin Coroutines - For managing background threads and simplifying async code.
-* **Dependency Injection (if used):**
+* **Dependency Injection:**
     * Hilt - "Manual Dependency Injection".
 * **UI:**
     * Jetpack Compose
@@ -43,7 +43,7 @@
 
 ## 🏗️ Architecture
 
-This project aims to follow the MVVM (Model-View-ViewModel) architecture pattern (or specify MVP, MVI, or your custom approach).
+This project aims to follow the MVVM (Model-View-ViewModel) architecture pattern.
 
 * **Model:** Represents the data layer (e.g., data classes for weather info, Repository that fetches data from the AccuWeather API).
 * **View:** Represents the UI layer (Activities/Fragments) that observes data from the ViewModel and displays it.
@@ -103,7 +103,7 @@ While this demo showcases core functionality, here are some potential future imp
 * [ ] Write comprehensive unit and UI tests.
 * [ ] Add support for different themes (e.g., dark mode).
 
-## 🤝 Contributing (Optional)
+## 🤝 Contributing
 
 Contributions are welcome! If you have suggestions for improvements or find any bugs, please feel free to open an issue or submit a pull request.
 
