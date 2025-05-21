@@ -103,6 +103,10 @@ While this demo showcases core functionality, here are some potential future imp
 * [ ] Write comprehensive unit and UI tests.
 * [ ] Add support for different themes (e.g., dark mode).
 
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
 ## 🤝 Contributing
 
 Contributions are welcome! If you have suggestions for improvements or find any bugs, please feel free to open an issue or submit a pull request.
