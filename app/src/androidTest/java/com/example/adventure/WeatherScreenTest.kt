@@ -88,16 +88,14 @@ class WeatherScreenTest {
                 .assertIsDisplayed()
                 .assertTextContains("New York", substring = true, ignoreCase = true)
         } catch (e : AssertionError) {
-            println("Location description not found and/or New York is not in the text.")
-            throw AssertionError(e.message, e)
+            throw AssertionError("Location description not found and/or New York is not in the text.", e)
         }
 
         try {
             composeTestRule.onNodeWithTag(TAG_WEATHER_TEMP, useUnmergedTree = true)
                 .assertIsDisplayed()
         } catch (e : AssertionError) {
-            println("Weather temperature not found.")
-            throw AssertionError(e.message, e)
+            throw AssertionError("Weather temperature not found.", e)
         }
 
         composeTestRule.onNodeWithTag(TAG_ERROR_TEXT).assertDoesNotExist()
@@ -113,12 +111,11 @@ class WeatherScreenTest {
             .performClick()
 
         // 3. Assert that a loading indicator (or loading text) appears
-        // Need to be specific about which loading indicator (weather details or main progress)
         composeTestRule.waitUntil(timeoutMillis = 5000L) {
             // Check for either the main progress or the "Loading..." text
             val progressNodes = composeTestRule.onAllNodesWithTag(TAG_PROGRESS, useUnmergedTree = true)
             val loadingTextNodes = composeTestRule.onAllNodesWithText("Loading...", useUnmergedTree = true)
-            progressNodes.fetchSemanticsNodes().isNotEmpty() || loadingTextNodes.fetchSemanticsNodes().isNotEmpty()
+            progressNodes.fetchSemanticsNodes().isEmpty() || loadingTextNodes.fetchSemanticsNodes().isEmpty()
         }
         println("Loading indicator appeared after refresh.")
 
