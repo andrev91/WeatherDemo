@@ -1,6 +1,6 @@
 # AccuWeather Demo Android App
 
-[![Kotlin Version](https://img.shields.io/badge/Kotlin-1.9.x-blue.svg)](https://kotlinlang.org)
+[![Kotlin Version](https://img.shields.io/badge/Kotlin-2.1.10-blue.svg)](https://kotlinlang.org)
 [![API](https://img.shields.io/badge/API-AccuWeather-orange.svg)](https://developer.accuweather.com/)
 ## 📖 Table of Contents
 
