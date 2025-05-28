@@ -161,7 +161,7 @@ class MainViewModel @Inject constructor(
         locationListWorkerUID = locationListRequest.id
         observeLocationListWork(locationListWorkerUID!!)
         workManager.enqueueUniqueWork(
-            "Location_$locationKey",
+            "Location_loader",
             ExistingWorkPolicy.REPLACE,
             locationListRequest)
     }

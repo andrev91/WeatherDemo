@@ -48,11 +48,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -101,6 +101,13 @@ dependencies {
     kaptAndroidTest(libs.dagger.hilt.compiler)
     testImplementation(libs.hilt.android.testing.v2511)
     testImplementation(libs.junit)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.kotlin) // For Kotlin-specific Mockito helpers
+    testImplementation(libs.androidx.core.testing) // For InstantTaskExecutorRule
+    testImplementation(libs.kotlinx.coroutines.test) // For TestCoroutineDispatcher
+    testImplementation(libs.turbine) // For testing Kotlin Flows
+    testImplementation(libs.guava)
+    testImplementation(libs.androidx.work.testing.v2101) // For testing WorkManager
     androidTestImplementation(platform("androidx.compose:compose-bom:2025.03.01"))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     androidTestImplementation(libs.hilt.android.testing.v2511)
