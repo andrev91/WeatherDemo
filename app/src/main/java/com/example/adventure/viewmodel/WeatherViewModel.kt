@@ -149,6 +149,10 @@ class MainViewModel @Inject constructor(
             }.launchIn(viewModelScope)
     }
 
+    fun triggerTempTypeChange(UName: UnitType) {
+        _uiState.update { it.copy(temperatureUnit = UName) }
+    }
+
     private fun fetchLocationList() {
         if (_uiState.value.isLoadingLocationList) return
 

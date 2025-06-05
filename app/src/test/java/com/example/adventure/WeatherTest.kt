@@ -100,12 +100,12 @@ class WeatherTest {
     @Test
     fun `init view model finished loading location list`() = runTest {
         viewModel.uiState.test {
-            val initialState = awaitItem()
+            awaitItem()
             val succeededWorkInfo = WorkInfo(
                 transactionID,
                 WorkInfo.State.SUCCEEDED,
                 emptySet(),
-                workDataOf(USLocationWorker.LOCATION_JSON to Gson().toJson(listOf("Atlanta", "Tucker", "Sandy Springs")))
+                workDataOf(USLocationWorker.LOCATION_JSON to Gson().toJson(listOf("Atlanta", "Tucker", "Sandy Springs")), USLocationWorker.OUTPUT_SUCCESS to true)
             )
             mockWorkInfo.value = succeededWorkInfo // Update the MutableStateFlow's value
             // THEN: The ViewModel's exposed states should now reflect SUCCEEDED

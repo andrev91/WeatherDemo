@@ -9,9 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -62,6 +65,7 @@ fun WeatherScreen(viewModel: MainViewModel = hiltViewModel()) {
             }
         }
     )
+    RadioButtonSelection(viewModel)
 }
 
 @Composable
@@ -99,11 +103,10 @@ fun WeatherScreenContent(uiState: WeatherUiState,
             Text(text = "Fetch Weather Data")
         }
     }
-    RadioButtonSelection(uiState)
 }
 
 @Composable
-fun RadioButtonSelection(uiState: WeatherUiState) {
+fun RadioButtonSelection(viewModel: MainViewModel) {
     val radioOptions = UnitType.entries.map { it.toString() }
     val (selectedOption, onOptionSelected) = remember { mutableStateOf(radioOptions[0]) }
     Column(Modifier.selectableGroup().padding(bottom = 80.dp),
@@ -114,7 +117,7 @@ fun RadioButtonSelection(uiState: WeatherUiState) {
                     selected = (option == selectedOption),
                     onClick = {
                         onOptionSelected(option)
-                        uiState.temperatureUnit = UnitType.valueOf(option.toString().uppercase())
+                        viewModel.triggerTempTypeChange(UnitType.valueOf(option.toString().uppercase()))
                     }
                 ).padding(16.dp), horizontalArrangement = Arrangement.Center) {
                 RadioButton(
@@ -189,24 +192,28 @@ fun DropDownLocations(uiState: WeatherUiState, onLocationSelected: (LocationOpti
 
 @Composable
 fun WeatherDetails(data: WeatherDisplayData, unit : UnitType = UnitType.CELSIUS) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = data.weatherDescription,
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.testTag(TAG_WEATHER_DESC)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Temperature: " + if (unit == UnitType.CELSIUS) data.temperatureCelsius
-            else data.temperatureFahrenheit,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.testTag(TAG_WEATHER_TEMP)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Observed at: ${data.observedAt}",
-            style = MaterialTheme.typography.bodySmall
-        )
+    Card(modifier = Modifier.width(200.dp).height(100.dp)) {
+        Column(modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center) {
+            Text(
+                text = data.weatherDescription,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.testTag(TAG_WEATHER_DESC)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Temperature: " + if (unit == UnitType.CELSIUS) data.temperatureCelsius
+                else data.temperatureFahrenheit,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.testTag(TAG_WEATHER_TEMP)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Observed at: ${data.observedAt}",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
     }
 }
 
