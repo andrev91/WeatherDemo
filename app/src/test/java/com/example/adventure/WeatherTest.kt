@@ -3,15 +3,16 @@ package com.example.adventure
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
+import androidx.work.Operation
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import androidx.work.Operation
 import app.cash.turbine.test
+import com.example.adventure.data.WeatherLocationResponse
 import com.example.adventure.viewmodel.MainViewModel
 import com.example.adventure.worker.USLocationWorker
-import com.google.common.util.concurrent.Futures
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertNull
 import junit.framework.TestCase.assertTrue
@@ -28,10 +29,12 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mock
+import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import java.util.UUID
 
 
@@ -43,6 +46,7 @@ class WeatherTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var transactionID : UUID
+    private lateinit var generatedWorkerUID : UUID
     private lateinit var mockWorkInfo : MutableStateFlow<WorkInfo>
 
     @Mock
@@ -59,6 +63,14 @@ class WeatherTest {
         MockitoAnnotations.openMocks(this)
         Dispatchers.setMain(testDispatcher)
 
+        val workRequestCaptor = argumentCaptor<OneTimeWorkRequest>()
+
+        whenever(mockWorkManager.enqueueUniqueWork(
+            any<String>(),
+            any<ExistingWorkPolicy>(),
+            workRequestCaptor.capture()
+        )).thenReturn(Mockito.mock(Operation::class.java))
+
         transactionID = UUID.randomUUID()
         val succeededWorkInfo = WorkInfo(
             transactionID,
@@ -68,9 +80,10 @@ class WeatherTest {
         mockWorkInfo = MutableStateFlow(succeededWorkInfo)
 
         whenever(mockWorkManager.getWorkInfoByIdFlow(any())).thenReturn(mockWorkInfo)
-        whenever(mockWorkManager.enqueueUniqueWork(any<String>(), any<ExistingWorkPolicy>(), any<OneTimeWorkRequest>())).thenReturn(mock())
+//        whenever(mockWorkManager.enqueueUniqueWork(any<String>(), any<ExistingWorkPolicy>(), any<OneTimeWorkRequest>())).thenReturn(mock())
 
         viewModel = MainViewModel(mockWorkManager, mockGson)
+        generatedWorkerUID = workRequestCaptor.firstValue.id
     }
 
     @After
@@ -101,11 +114,13 @@ class WeatherTest {
     fun `init view model finished loading location list`() = runTest {
         viewModel.uiState.test {
             awaitItem()
+            val data1 = WeatherLocationResponse(null,"New York","New York",null,null,null)
+            val listType = object : TypeToken<List<WeatherLocationResponse>>() {}.type
             val succeededWorkInfo = WorkInfo(
-                transactionID,
+                generatedWorkerUID,
                 WorkInfo.State.SUCCEEDED,
                 emptySet(),
-                workDataOf(USLocationWorker.LOCATION_JSON to Gson().toJson(listOf("Atlanta", "Tucker", "Sandy Springs")), USLocationWorker.OUTPUT_SUCCESS to true)
+                workDataOf(USLocationWorker.LOCATION_JSON to Gson().toJson(arrayListOf(data1), listType), USLocationWorker.OUTPUT_SUCCESS to true)
             )
             mockWorkInfo.value = succeededWorkInfo // Update the MutableStateFlow's value
             // THEN: The ViewModel's exposed states should now reflect SUCCEEDED

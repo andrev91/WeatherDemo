@@ -62,6 +62,9 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.11"
     }
+//    testOptions {
+//        unitTests.all { test-> test.jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005") }
+//    }
 }
 
 dependencies {
