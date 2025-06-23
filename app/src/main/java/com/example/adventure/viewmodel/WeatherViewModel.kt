@@ -14,6 +14,7 @@ import androidx.work.workDataOf
 import com.example.adventure.data.WeatherConditionResponse
 import com.example.adventure.data.WeatherLocationResponse
 import com.example.adventure.state.WeatherUiState
+import com.example.adventure.util.WeatherIconMapper
 import com.example.adventure.worker.LocationKeyWorker
 import com.example.adventure.worker.SearchWorker
 import com.example.adventure.worker.USLocationWorker
@@ -36,6 +37,7 @@ data class WeatherDisplayData(
     val temperatureFahrenheit : String,
     val temperatureCelsius : String,
     val weatherDescription: String,
+    val weatherIcon: Int? = null,
     val observedAt : String,
 )
 
@@ -339,6 +341,7 @@ class MainViewModel @Inject constructor(
 
         return WeatherDisplayData(
             weatherDescription = response.weatherText ?: "No description",
+            weatherIcon = WeatherIconMapper.getIconResource(response.weatherIcon ?: 0),
             temperatureFahrenheit = formattedTempFahrenheit,
             temperatureCelsius = formattedTempCelsius,
             observedAt = observedTime
