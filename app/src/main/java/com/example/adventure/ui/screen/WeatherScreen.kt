@@ -66,15 +66,16 @@ fun WeatherScreen(viewModel: MainViewModel = hiltViewModel()) {
             uiState.selectedLocation?.let {
                 viewModel.searchLocation()
             }
-        }
+        },
+        onUnitSelected = { viewModel.triggerTempTypeChange(it) }
     )
-    RadioButtonSelection(viewModel)
 }
 
 @Composable
 fun WeatherScreenContent(uiState: WeatherUiState,
                          onLocationSelected: (LocationOption?) -> Unit,
-                         onRefreshClicked: () -> Unit) {
+                         onRefreshClicked: () -> Unit,
+                         onUnitSelected : (UnitType) -> Unit) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center) {
@@ -104,36 +105,38 @@ fun WeatherScreenContent(uiState: WeatherUiState,
         }
         Button(onClick = onRefreshClicked, modifier = Modifier.testTag(TAG_REFRESH_BUTTON)
             , elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)) {
-            Text(text = "Fetch Weather Data")
+            Text(text = if (uiState.weatherDisplayData != null) "Refresh Weather Data" else "Fetch Weather Data")
         }
+        Spacer(modifier = Modifier.height(24.dp))
+        RadioButtonSelection(selectedUnit = uiState.temperatureUnit, onOptionSelected = onUnitSelected)
     }
 }
 
 @Composable
-fun RadioButtonSelection(viewModel: MainViewModel) {
-    val radioOptions = UnitType.entries.map { it.toString() }
-    val (selectedOption, onOptionSelected) = remember { mutableStateOf(radioOptions[0]) }
-    Column(Modifier.selectableGroup().padding(bottom = 80.dp),
+fun RadioButtonSelection(selectedUnit : UnitType, onOptionSelected : (UnitType) -> Unit) {
+    val radioOptions = UnitType.entries
+    Column(Modifier.selectableGroup(),
         verticalArrangement = Arrangement.Bottom) {
         radioOptions.forEach { option ->
-            Row(modifier = Modifier.fillMaxWidth().height(56.dp)
+            Row(modifier = Modifier
+                .height(56.dp)
                 .selectable(
-                    selected = (option == selectedOption),
-                    onClick = {
-                        onOptionSelected(option)
-                        viewModel.triggerTempTypeChange(UnitType.valueOf(option.toString().uppercase()))
-                    }
-                ).padding(16.dp), horizontalArrangement = Arrangement.Center) {
-                RadioButton(
-                    modifier = Modifier.testTag(option) ,
-                    selected = (option == selectedOption),
-                    onClick = null // null recommended for accessibility with screen readers
-                )
-                Text(
-                    text = option.toString(),
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(start = 16.dp)
-                )
+                    selected = (option == selectedUnit),
+                    onClick = { onOptionSelected(option) },
+                    role = androidx.compose.ui.semantics.Role.RadioButton
+                ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center) {
+                    RadioButton(
+                        modifier = Modifier.testTag(option.toString()) ,
+                        selected = (option == selectedUnit ),
+                        onClick = null
+                    )
+                    Text(
+                        text = option.toString(),
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(start = 16.dp)
+                    )
             }
         }
     }
@@ -256,14 +259,14 @@ fun PreviewWeatherScreenContent_Loading() {
         WeatherScreenContent(uiState = WeatherUiState(isLoadingWeatherData = true,
             isLoadingLocationData = true, isLoadingLocationList = true),
             onLocationSelected = { LocationOption("2177453","Arkansas") },
-            onRefreshClicked = {})
+            onRefreshClicked = {}, onUnitSelected = {})
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, backgroundColor = 0xFF000000)
 @Composable
 fun PreviewWeatherScreenContent_Success() {
-    AdventureTheme {
+    AdventureTheme(darkTheme = true) {
         WeatherScreenContent(
             uiState = WeatherUiState(
                 isLoadingWeatherData = true,
@@ -271,7 +274,7 @@ fun PreviewWeatherScreenContent_Success() {
                     com.example.adventure.R.mipmap.rainy_white_background,"14:30")
             ),
             onLocationSelected = { LocationOption("349727","New York") },
-            onRefreshClicked = {}
+            onRefreshClicked = {},onUnitSelected = {}
         )
     }
 }
@@ -283,7 +286,7 @@ fun PreviewWeatherScreenContent_Error() {
         WeatherScreenContent(
             uiState = WeatherUiState(isLoadingWeatherData = false, error = "Network Error"),
             onLocationSelected = { LocationOption("348308","Chicago") },
-            onRefreshClicked = {}
+            onRefreshClicked = {}, onUnitSelected = {}
         )
     }
 }
