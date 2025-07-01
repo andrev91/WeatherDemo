@@ -7,10 +7,10 @@ import kotlinx.serialization.Serializable
 data class WeatherLocationResponse(
     @SerializedName("Key")
     val key: String?,
-    @SerializedName("LocalizedName")
-    val localizedName: String?,
     @SerializedName("EnglishName")
     val englishName: String?,
+    @SerializedName("LocalizedName")
+    val localizedName: String?,
     @SerializedName("Region")
     val region: Region? = null,
     @SerializedName("Country")

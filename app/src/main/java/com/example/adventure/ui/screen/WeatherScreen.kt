@@ -115,11 +115,12 @@ fun WeatherScreenContent(uiState: WeatherUiState,
 @Composable
 fun RadioButtonSelection(selectedUnit : UnitType, onOptionSelected : (UnitType) -> Unit) {
     val radioOptions = UnitType.entries
-    Column(Modifier.selectableGroup(),
-        verticalArrangement = Arrangement.Bottom) {
+    Row (Modifier.selectableGroup(),
+        horizontalArrangement = Arrangement.Center) {
         radioOptions.forEach { option ->
             Row(modifier = Modifier
                 .height(56.dp)
+                .padding(16.dp)
                 .selectable(
                     selected = (option == selectedUnit),
                     onClick = { onOptionSelected(option) },
@@ -269,7 +270,7 @@ fun PreviewWeatherScreenContent_Success() {
     AdventureTheme(darkTheme = true) {
         WeatherScreenContent(
             uiState = WeatherUiState(
-                isLoadingWeatherData = true,
+                isLoadingWeatherData = false,
                 weatherDisplayData = WeatherDisplayData("Sunny", "25°C", "77°F",
                     com.example.adventure.R.mipmap.rainy_white_background,"14:30")
             ),
