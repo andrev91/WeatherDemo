@@ -341,7 +341,7 @@ class MainViewModel @Inject constructor(
 
         return WeatherDisplayData(
             weatherDescription = response.weatherText ?: "No description",
-            weatherIcon = WeatherIconMapper.getIconResource(response.weatherIcon ?: 0),
+            weatherIcon = WeatherIconMapper.getIconResource(response.weatherIcon ?: 0, response.isDayTime ?: true),
             temperatureFahrenheit = formattedTempFahrenheit,
             temperatureCelsius = formattedTempCelsius,
             observedAt = observedTime

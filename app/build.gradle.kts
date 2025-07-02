@@ -17,6 +17,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
     id("com.google.dagger.hilt.android")
     id("dagger.hilt.android.plugin")
+    id("com.google.devtools.ksp")
     kotlin("kapt")
 }
 
@@ -98,6 +99,11 @@ dependencies {
     implementation("com.google.dagger:hilt-android:2.51.1")
     implementation("androidx.hilt:hilt-work:1.2.0") // Or latest
     kapt("androidx.hilt:hilt-compiler:1.2.0") // Hilt Work compiler (often needed)
+
+    //Room
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.room.runtime)
 
     // Testing libraries
     kaptTest(libs.hilt.compiler.v2561)
