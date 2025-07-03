@@ -18,7 +18,6 @@ plugins {
     id("com.google.dagger.hilt.android")
     id("dagger.hilt.android.plugin")
     id("com.google.devtools.ksp")
-    kotlin("kapt")
 }
 
 android {
@@ -75,7 +74,7 @@ dependencies {
     // Hilt/Dagger
     implementation("com.google.dagger:hilt-android:2.56.2")
     implementation(libs.androidx.work.runtime.ktx)
-    kapt("com.google.dagger:hilt-compiler:2.56.2")
+    ksp("com.google.dagger:hilt-compiler:2.56.2")
 
     // Lifecycle libraries
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
@@ -98,7 +97,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
     implementation("com.google.dagger:hilt-android:2.51.1")
     implementation("androidx.hilt:hilt-work:1.2.0") // Or latest
-    kapt("androidx.hilt:hilt-compiler:1.2.0") // Hilt Work compiler (often needed)
+    ksp("androidx.hilt:hilt-compiler:1.2.0") // Hilt Work compiler (often needed)
 
     //Room
     ksp(libs.androidx.room.compiler)
@@ -106,8 +105,8 @@ dependencies {
     implementation(libs.androidx.room.runtime)
 
     // Testing libraries
-    kaptTest(libs.hilt.compiler.v2561)
-    kaptAndroidTest(libs.dagger.hilt.compiler)
+    kspTest(libs.hilt.compiler.v2561)
+    kspAndroidTest(libs.dagger.hilt.compiler)
     testImplementation(libs.hilt.android.testing.v2511)
     testImplementation(libs.junit)
     testImplementation(libs.mockito.core)
