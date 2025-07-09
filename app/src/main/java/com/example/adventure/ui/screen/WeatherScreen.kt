@@ -11,8 +11,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -23,6 +25,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -76,7 +79,8 @@ fun WeatherScreenContent(uiState: WeatherUiState,
                          onLocationSelected: (LocationOption?) -> Unit,
                          onRefreshClicked: () -> Unit,
                          onUnitSelected : (UnitType) -> Unit) {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp),
+    val scrollState = rememberScrollState()
+    Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState).padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center) {
         Text("Accuweather Data", style = MaterialTheme.typography.headlineMedium)
@@ -165,8 +169,7 @@ fun DropDownLocations(uiState: WeatherUiState, onLocationSelected: (LocationOpti
                 label = { Text("Location") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier
-                    .menuAnchor()
-                    //.menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
                     .fillMaxWidth()
                     .testTag(TAG_LOCATION_DROPDOWN_OUTLINE),
                 enabled = !uiState.availableLocations.isNullOrEmpty() && !uiState.isLoadingLocationList
