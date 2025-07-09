@@ -11,8 +11,9 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.example.adventure.data.WeatherConditionResponse
-import com.example.adventure.data.WeatherLocationResponse
+import com.example.adventure.data.network.WeatherConditionResponse
+import com.example.adventure.data.network.WeatherLocationResponse
+import com.example.adventure.repository.LocationRepository
 import com.example.adventure.state.WeatherUiState
 import com.example.adventure.util.WeatherIconMapper
 import com.example.adventure.worker.LocationKeyWorker
@@ -70,7 +71,7 @@ data class LocationOption(
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val workManager: WorkManager,
-    private val gson: Gson,
+    private val gson: Gson
     ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WeatherUiState())

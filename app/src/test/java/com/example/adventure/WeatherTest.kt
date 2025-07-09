@@ -8,9 +8,10 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import app.cash.turbine.test
-import com.example.adventure.data.WeatherLocationResponse
+import com.example.adventure.data.network.WeatherLocationResponse
 import com.example.adventure.viewmodel.MainViewModel
-import com.example.adventure.worker.USLocationWorker
+import com.example.adventure.worker.USLocationWorker.Companion.LOCATION_JSON
+import com.example.adventure.worker.USLocationWorker.Companion.OUTPUT_SUCCESS
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import junit.framework.TestCase.assertFalse
@@ -30,7 +31,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mock
 import org.mockito.Mockito
-import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
@@ -114,14 +114,16 @@ class WeatherTest {
     fun `init view model finished loading location list`() = runTest {
         viewModel.uiState.test {
             awaitItem()
-            val data1 = WeatherLocationResponse(null,"New York","New York",null,null,null)
+            val data1 = WeatherLocationResponse(key = null, englishName = "New York", localizedName = "New York",
+                region = null, administrativeArea = null, country = null)
             val listType = object : TypeToken<List<WeatherLocationResponse>>() {}.type
+            val test = Gson().toJson(listOf(data1), listType)
             val succeededWorkInfo = WorkInfo(
                 generatedWorkerUID,
                 WorkInfo.State.SUCCEEDED,
                 emptySet(),
-                workDataOf(USLocationWorker.LOCATION_JSON to Gson().toJson(arrayListOf(data1), listType), USLocationWorker.OUTPUT_SUCCESS to true)
-            )
+                outputData = workDataOf(LOCATION_JSON to test, OUTPUT_SUCCESS to true)
+            ) //Data {locationsJson : [{"LocalizedName":"New York","EnglishName":"New York"}], SUCCESS : true}
             mockWorkInfo.value = succeededWorkInfo // Update the MutableStateFlow's value
             // THEN: The ViewModel's exposed states should now reflect SUCCEEDED
             val successState = awaitItem()

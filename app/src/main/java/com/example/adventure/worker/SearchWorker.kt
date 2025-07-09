@@ -8,7 +8,7 @@ import androidx.work.Data
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.example.adventure.api.ApiService
-import com.example.adventure.data.WeatherLocationResponse
+import com.example.adventure.data.network.WeatherLocationResponse
 import com.example.adventure.network.NetworkModule
 import com.google.gson.Gson
 import dagger.assisted.Assisted
