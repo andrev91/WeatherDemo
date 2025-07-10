@@ -13,8 +13,8 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.example.adventure.data.network.WeatherConditionResponse
 import com.example.adventure.data.network.WeatherLocationResponse
-import com.example.adventure.repository.LocationRepository
 import com.example.adventure.state.WeatherUiState
+import com.example.adventure.repository.CityRepository
 import com.example.adventure.util.WeatherIconMapper
 import com.example.adventure.worker.LocationKeyWorker
 import com.example.adventure.worker.SearchWorker
@@ -71,14 +71,12 @@ data class LocationOption(
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val workManager: WorkManager,
-    private val gson: Gson
+    private val gson: Gson,
+    private val cityRepository: CityRepository,
     ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WeatherUiState())
     val uiState: StateFlow<WeatherUiState> = _uiState.asStateFlow()
-
-//    private val _testChannel = Channel<testChannel>()
-//    val flowChannel: Flow<testChannel> = _testChannel.receiveAsFlow()
 
     private var weatherWorkerUId: UUID? = null
     private var locationWorkerUID: UUID? = null
