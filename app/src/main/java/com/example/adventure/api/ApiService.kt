@@ -1,7 +1,7 @@
 package com.example.adventure.api
 
-import com.example.adventure.data.network.WeatherConditionResponse
-import com.example.adventure.data.network.WeatherLocationResponse
+import com.example.adventure.data.network.model.WeatherConditionResponse
+import com.example.adventure.data.network.model.WeatherLocationResponse
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Path

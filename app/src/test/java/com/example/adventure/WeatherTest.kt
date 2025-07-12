@@ -8,7 +8,9 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import app.cash.turbine.test
-import com.example.adventure.data.network.WeatherLocationResponse
+import com.example.adventure.data.network.model.WeatherLocationResponse
+import com.example.adventure.repository.CityRepository
+import com.example.adventure.repository.LocationRepository
 import com.example.adventure.viewmodel.MainViewModel
 import com.example.adventure.worker.USLocationWorker.Companion.LOCATION_JSON
 import com.example.adventure.worker.USLocationWorker.Companion.OUTPUT_SUCCESS
@@ -56,6 +58,12 @@ class WeatherTest {
     private lateinit var mockGson : Gson
 
     @Mock
+    private lateinit var mockCityRepository : CityRepository
+
+    @Mock
+    private lateinit var mockLocationRepository : LocationRepository
+
+    @Mock
     private lateinit var viewModel : MainViewModel
 
     @Before
@@ -82,7 +90,7 @@ class WeatherTest {
         whenever(mockWorkManager.getWorkInfoByIdFlow(any())).thenReturn(mockWorkInfo)
 //        whenever(mockWorkManager.enqueueUniqueWork(any<String>(), any<ExistingWorkPolicy>(), any<OneTimeWorkRequest>())).thenReturn(mock())
 
-        viewModel = MainViewModel(mockWorkManager, mockGson)
+        viewModel = MainViewModel(mockWorkManager, mockGson, mockCityRepository, mockLocationRepository)
         generatedWorkerUID = workRequestCaptor.firstValue.id
     }
 

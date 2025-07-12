@@ -8,6 +8,6 @@ data class Location(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
     val locationKey: String,
-    val latitude: Double,
-    val longitude: Double
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0
 )

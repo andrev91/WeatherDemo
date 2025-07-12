@@ -1,4 +1,4 @@
-package com.example.adventure.data.network
+package com.example.adventure.data.network.model
 
 import com.google.gson.annotations.SerializedName
 import kotlinx.serialization.Serializable

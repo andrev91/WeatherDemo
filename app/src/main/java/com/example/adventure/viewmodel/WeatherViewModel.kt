@@ -2,7 +2,6 @@ package com.example.adventure.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
@@ -11,13 +10,13 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.example.adventure.data.network.WeatherConditionResponse
-import com.example.adventure.data.network.WeatherLocationResponse
+import com.example.adventure.data.network.model.WeatherConditionResponse
+import com.example.adventure.data.network.model.WeatherLocationResponse
 import com.example.adventure.state.WeatherUiState
 import com.example.adventure.repository.CityRepository
+import com.example.adventure.repository.LocationRepository
 import com.example.adventure.util.WeatherIconMapper
 import com.example.adventure.worker.LocationKeyWorker
-import com.example.adventure.worker.SearchWorker
 import com.example.adventure.worker.USLocationWorker
 import com.example.adventure.worker.WeatherWorker
 import com.google.gson.Gson
@@ -31,6 +30,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
 
@@ -73,6 +73,7 @@ class MainViewModel @Inject constructor(
     private val workManager: WorkManager,
     private val gson: Gson,
     private val cityRepository: CityRepository,
+    private val locationRepository: LocationRepository
     ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WeatherUiState())
@@ -123,31 +124,18 @@ class MainViewModel @Inject constructor(
         if (_uiState.value.isLoadingLocationData || _uiState.value.isLoadingWeatherData) return
         _uiState.update { it.copy(isLoadingWeatherData = true ,
             isLoadingLocationData = true, error = null, weatherDisplayData = null, locationDisplayData = null) }
-
         val location = uiState.value.selectedLocation?.value ?: return
-        val searchRequest = OneTimeWorkRequestBuilder<SearchWorker>()
-            .setInputData(workDataOf(SearchWorker.SEARCH_KEY to location))
-            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
-            .build()
-        val uuid = searchRequest.id
-        workManager.enqueueUniqueWork(
-            "SearchWorker: $location",
-            ExistingWorkPolicy.REPLACE,
-            searchRequest)
-        workManager.getWorkInfoByIdLiveData(uuid)
-            .asFlow()
-            .onEach { workInfo ->
-                if (workInfo != null && workInfo.state == WorkInfo.State.SUCCEEDED) {
-                    val outputData = workInfo.outputData
-                    val locationData = gson.fromJson(outputData.getString(SearchWorker.LOCATION_JSON), WeatherLocationResponse::class.java)
-                    if (locationData != null) {
-                        fetchWeatherAndLocation(locationData.key!!)
+
+        viewModelScope.launch {
+            locationRepository.getOrFetchLocation(location)
+                .collect { result ->
+                    result.onSuccess { location ->
+                        fetchWeatherAndLocation(location.locationKey)
+                    }.onFailure { error ->
+                        _uiState.update { it.copy(error = error.message) }
                     }
-                } else if (workInfo != null && workInfo.state == WorkInfo.State.FAILED) {
-                    val errorMessage = workInfo.outputData.getString(SearchWorker.OUTPUT_ERROR_MESSAGE)
-                    _uiState.update { it.copy(error = errorMessage) }
                 }
-            }.launchIn(viewModelScope)
+        }
     }
 
     fun triggerTempTypeChange(UName: UnitType) {
