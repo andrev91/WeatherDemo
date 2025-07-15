@@ -42,10 +42,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.adventure.repository.LocationRepository
 import com.example.adventure.state.WeatherUiState
 import com.example.adventure.ui.theme.AdventureTheme
-import com.example.adventure.viewmodel.LocationDisplayData
-import com.example.adventure.viewmodel.LocationOption
 import com.example.adventure.viewmodel.MainViewModel
 import com.example.adventure.viewmodel.UnitType
 import com.example.adventure.viewmodel.WeatherDisplayData
@@ -64,19 +63,17 @@ fun WeatherScreen(viewModel: MainViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     WeatherScreenContent(uiState = uiState,
-        onLocationSelected = { selectedLocation -> viewModel.setSelectedLocation(selectedLocation!!) },
-        onRefreshClicked = {
-            uiState.selectedLocation?.let {
-                viewModel.searchLocation()
-            }
-        },
+        onStateSelected = { selectedLocation -> viewModel.setSelectedState(selectedLocation!!) },
+        onCitySelected = { viewModel.setSelectedCity(it) },
+        onRefreshClicked = { viewModel.searchLocation() },
         onUnitSelected = { viewModel.triggerTempTypeChange(it) }
     )
 }
 
 @Composable
 fun WeatherScreenContent(uiState: WeatherUiState,
-                         onLocationSelected: (LocationOption?) -> Unit,
+                         onStateSelected: (LocationRepository.State?) -> Unit,
+                         onCitySelected: (String) -> Unit,
                          onRefreshClicked: () -> Unit,
                          onUnitSelected : (UnitType) -> Unit) {
     val scrollState = rememberScrollState()
@@ -86,19 +83,17 @@ fun WeatherScreenContent(uiState: WeatherUiState,
         Text("Accuweather Data", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
 
-        DropDownLocations(uiState = uiState, onLocationSelected)
+        USStateLocations(uiState = uiState, onStateSelected)
         Spacer(Modifier.height(24.dp))
 
-        if (uiState.isLoadingLocationData && uiState.isLoadingWeatherData && uiState.error == null) {
+        if (uiState.isLoadingStateList && uiState.isLoadingCityList
+            && uiState.isLoadingWeatherData && uiState.error == null) {
             CircularProgressIndicator(modifier = Modifier.testTag(TAG_PROGRESS))
             Text(text = "Loading...", modifier = Modifier.padding(8.dp))
         }
         else if (uiState.weatherDisplayData == null
-            && uiState.error == null && uiState.locationDisplayData == null) {
+            && uiState.error == null) {
             Text(text = "Weather/Location Data", modifier = Modifier.padding(8.dp))
-        } else if (uiState.locationDisplayData != null) {
-            LocationDetails(data = uiState.locationDisplayData)
-            Spacer(modifier = Modifier.height(8.dp))
         } else if (uiState.error != null) {
             Text(text = uiState.error, color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag(TAG_ERROR_TEXT))
             Spacer(modifier = Modifier.height(8.dp))
@@ -150,46 +145,46 @@ fun RadioButtonSelection(selectedUnit : UnitType, onOptionSelected : (UnitType) 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DropDownLocations(uiState: WeatherUiState, onLocationSelected: (LocationOption?) -> Unit) {
+fun USStateLocations(uiState: WeatherUiState, onLocationSelected: (LocationRepository.State?) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    val selectedOptionObject = uiState.availableLocations?.find { it == uiState.selectedLocation }
+    val selectedOptionObject = uiState.availableStates?.find { it == uiState.selectedState }
     Box(modifier = Modifier.fillMaxWidth(0.8f).testTag(TAG_LOCATION_DROPDOWN)) {
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = {
-                if (!uiState.availableLocations.isNullOrEmpty() && !uiState.isLoadingLocationList) {
+                if (!uiState.availableStates.isNullOrEmpty() && !uiState.isLoadingStateList) {
                     expanded = !expanded
                 }
             }
         ) {
             OutlinedTextField(
-                value = selectedOptionObject?.value ?: "Select Location",
+                value = selectedOptionObject?.name ?: "Select State",
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Location") },
+                label = { Text("US State") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier
                     .menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
                     .fillMaxWidth()
                     .testTag(TAG_LOCATION_DROPDOWN_OUTLINE),
-                enabled = !uiState.availableLocations.isNullOrEmpty() && !uiState.isLoadingLocationList
+                enabled = !uiState.availableStates.isNullOrEmpty() && !uiState.isLoadingStateList
             )
             ExposedDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
-                if (uiState.isLoadingLocationList) {
+                if (uiState.isLoadingStateList) {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-                } else if (uiState.availableLocations!!.isEmpty()) {
+                } else if (uiState.availableStates!!.isEmpty()) {
                     DropdownMenuItem(
-                        text = { Text("No Locations Found") },
+                        text = { Text("No US States Found") },
                         onClick = { expanded = false },
                         enabled = false
                     )
                 } else {
-                    uiState.availableLocations.forEach { option ->
+                    uiState.availableStates.forEach { option ->
                         DropdownMenuItem(
-                            text = { Text(option.value) },
+                            text = { Text(option.name) },
                             onClick = {
                                 onLocationSelected(option)
                                 expanded = false
@@ -199,6 +194,11 @@ fun DropDownLocations(uiState: WeatherUiState, onLocationSelected: (LocationOpti
             }
         }
     }
+}
+
+@Composable
+fun CityDropDown() {
+    var expanded by remember { mutableStateOf(false) }
 }
 
 @Composable
@@ -235,34 +235,14 @@ fun WeatherDetails(data: WeatherDisplayData, unit : UnitType = UnitType.CELSIUS)
     }
 }
 
-@Composable
-fun LocationDetails(data: LocationDisplayData) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = data.locationName,
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.testTag(TAG_LOCATION_DESC)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Country: ${data.country}",
-            style = MaterialTheme.typography.bodyLarge,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Admin Area: ${data.adminArea}",
-            style = MaterialTheme.typography.bodySmall
-        )
-    }
-}
-
 @Preview(showBackground = true)
 @Composable
 fun PreviewWeatherScreenContent_Loading() {
     AdventureTheme {
         WeatherScreenContent(uiState = WeatherUiState(isLoadingWeatherData = true,
-            isLoadingLocationData = true, isLoadingLocationList = true),
-            onLocationSelected = { LocationOption("2177453","Arkansas") },
+            isLoadingCityList = true, isLoadingStateList = true),
+            onStateSelected = { LocationRepository.State("Georgia", "GA") },
+            onCitySelected = { listOf("Dunwoody","Powder Springs, Marietta") },
             onRefreshClicked = {}, onUnitSelected = {})
     }
 }
@@ -277,7 +257,8 @@ fun PreviewWeatherScreenContent_Success() {
                 weatherDisplayData = WeatherDisplayData("Sunny", "25°C", "77°F",
                     com.example.adventure.R.mipmap.rainy_white_background,"14:30")
             ),
-            onLocationSelected = { LocationOption("349727","New York") },
+            onStateSelected = { LocationRepository.State("Georgia", "GA") },
+            onCitySelected = { listOf("Dunwoody","Powder Springs, Marietta") },
             onRefreshClicked = {},onUnitSelected = {}
         )
     }
@@ -289,7 +270,8 @@ fun PreviewWeatherScreenContent_Error() {
     AdventureTheme {
         WeatherScreenContent(
             uiState = WeatherUiState(isLoadingWeatherData = false, error = "Network Error"),
-            onLocationSelected = { LocationOption("348308","Chicago") },
+            onStateSelected = { LocationRepository.State("Georgia", "GA") },
+            onCitySelected = { listOf("Dunwoody","Powder Springs, Marietta") },
             onRefreshClicked = {}, onUnitSelected = {}
         )
     }

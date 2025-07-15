@@ -13,7 +13,6 @@ import androidx.work.workDataOf
 import com.example.adventure.data.network.model.WeatherConditionResponse
 import com.example.adventure.data.network.model.WeatherLocationResponse
 import com.example.adventure.state.WeatherUiState
-import com.example.adventure.repository.CityRepository
 import com.example.adventure.repository.LocationRepository
 import com.example.adventure.util.WeatherIconMapper
 import com.example.adventure.worker.LocationKeyWorker
@@ -52,17 +51,6 @@ enum class UnitType {
     }
 }
 
-data class LocationDisplayData(
-    val locationName: String,
-    val adminArea: String,
-    val country : String
-)
-
-data class LocationOption(
-    val key: String,
-    val value: String
-)
-
 //sealed class testChannel {
 //    data class Error(val errorMessage: String) : testChannel()
 //    data class Success(val successMessage: String) : testChannel()
@@ -72,7 +60,6 @@ data class LocationOption(
 class MainViewModel @Inject constructor(
     private val workManager: WorkManager,
     private val gson: Gson,
-    private val cityRepository: CityRepository,
     private val locationRepository: LocationRepository
     ) : ViewModel() {
 
@@ -86,16 +73,25 @@ class MainViewModel @Inject constructor(
     private val locationKey = "225007" //default location
 
     init {
-        fetchLocationList()
+        fetchStateList()
     }
 
-    fun setSelectedLocation(location: LocationOption) {
-        if (location == _uiState.value.selectedLocation) return
+    fun setSelectedState(state: LocationRepository.State) {
+        if (state == _uiState.value.selectedState) return
 
-        _uiState.update { it.copy(selectedLocation = location, weatherDisplayData = null, locationDisplayData = null, error = null) }
+        _uiState.update { it.copy(selectedState = state, weatherDisplayData = null,
+            isLoadingStateList = false, error = null, isLoadingCityList = true) }
+        val cities = locationRepository.getMajorCitiesByState(state.abbreviation)
+        _uiState.update { it.copy(availableCities = cities, isLoadingCityList = false) }
     }
 
-    private fun fetchWeatherAndLocation(locationKey: String = "") {
+    fun setSelectedCity(city: String) {
+        if (city == _uiState.value.selectedCity) return
+
+        _uiState.update { it.copy(selectedCity = city, weatherDisplayData = null, error = null) }
+    }
+
+    private fun fetchWeather(locationKey: String = "") {
         val weatherRequest = OneTimeWorkRequestBuilder<WeatherWorker>()
             .setInputData(
                 workDataOf(WeatherWorker.WEATHER_KEY to locationKey.ifEmpty { this.locationKey })
@@ -107,30 +103,20 @@ class MainViewModel @Inject constructor(
             "WeatherLocation_$locationKey",
             ExistingWorkPolicy.REPLACE,
             weatherRequest)
-
-        val locationRequest = OneTimeWorkRequestBuilder<LocationKeyWorker>()
-            .setInputData(workDataOf(LocationKeyWorker.LOCATION_KEY to locationKey.ifEmpty { this.locationKey }))
-            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
-            .build()
-        locationWorkerUID = locationRequest.id
-        observerLocationWork(locationWorkerUID!!)
-        workManager.enqueueUniqueWork(
-            "Location_$locationKey",
-            ExistingWorkPolicy.REPLACE,
-            locationRequest)
     }
 
     fun searchLocation() {
-        if (_uiState.value.isLoadingLocationData || _uiState.value.isLoadingWeatherData) return
+        if (_uiState.value.isLoadingWeatherData) return
         _uiState.update { it.copy(isLoadingWeatherData = true ,
-            isLoadingLocationData = true, error = null, weatherDisplayData = null, locationDisplayData = null) }
-        val location = uiState.value.selectedLocation?.value ?: return
+            error = null, weatherDisplayData = null) }
+        val state = uiState.value.selectedState?.name ?: return
+        val city = uiState.value.selectedCity ?: return
 
         viewModelScope.launch {
-            locationRepository.getOrFetchLocation(location)
+            locationRepository.getOrFetchLocation("$state,$city")
                 .collect { result ->
                     result.onSuccess { location ->
-                        fetchWeatherAndLocation(location.locationKey)
+                        fetchWeather(location.locationKey)
                     }.onFailure { error ->
                         _uiState.update { it.copy(error = error.message) }
                     }
@@ -142,21 +128,13 @@ class MainViewModel @Inject constructor(
         _uiState.update { it.copy(temperatureUnit = UName) }
     }
 
-    private fun fetchLocationList() {
-        if (_uiState.value.isLoadingLocationList) return
+    private fun fetchStateList() {
+        if (_uiState.value.isLoadingStateList) return
 
-        _uiState.update { it.copy(isLoadingLocationList = true,
-            error = null, selectedLocation = null) }
+        _uiState.update { it.copy(isLoadingStateList = true,
+            error = null, selectedState = null, selectedCity = null, availableStates = null, availableCities = null) }
 
-        val locationListRequest = OneTimeWorkRequestBuilder<USLocationWorker>()
-            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
-            .build()
-        locationListWorkerUID = locationListRequest.id
-        observeLocationListWork(locationListWorkerUID!!)
-        workManager.enqueueUniqueWork(
-            "Location_loader",
-            ExistingWorkPolicy.REPLACE,
-            locationListRequest)
+        locationRepository.getStates()
     }
 
     private fun observerWeatherWork(uuid: UUID) {
@@ -164,22 +142,6 @@ class MainViewModel @Inject constructor(
             .filterNotNull()
             .filter { it.id == weatherWorkerUId }
             .onEach { workInfo -> processWeather(workInfo) }
-            .launchIn(viewModelScope)
-    }
-
-    private fun observerLocationWork(uuid: UUID) {
-        workManager.getWorkInfoByIdFlow(uuid)
-            .filterNotNull()
-            .filter { it.id == locationWorkerUID }
-            .onEach { workInfo -> processLocation(workInfo) }
-            .launchIn(viewModelScope)
-    }
-
-    private fun observeLocationListWork(uuid: UUID) {
-        workManager.getWorkInfoByIdFlow(uuid)
-            .filterNotNull()
-            .filter { it.id == locationListWorkerUID }
-            .onEach { workInfo -> processLocationList(workInfo) }
             .launchIn(viewModelScope)
     }
 
@@ -264,62 +226,6 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    private fun processLocation(workInfo: WorkInfo) {
-        when (workInfo.state) {
-            WorkInfo.State.SUCCEEDED -> {
-                val outputData = workInfo.outputData
-                val success = outputData.getBoolean(LocationKeyWorker.OUTPUT_SUCCESS, false)
-                if (success) {
-                    val locationJson = outputData.getString(LocationKeyWorker.LOCATION_JSON)
-                    val gson = gson.fromJson(locationJson, WeatherLocationResponse::class.java)
-                    _uiState.update { it.copy(isLoadingLocationData = false, error = null, locationDisplayData = getLocationDisplayData(gson)) }
-                }
-            }
-            WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> {
-                val errorMsg = workInfo.outputData.getString(LocationKeyWorker.OUTPUT_ERROR_MESSAGE)
-                    ?: "Unknown error"
-                Log.e(TAG, "Work failed: $errorMsg")
-            }
-            WorkInfo.State.RUNNING, WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED -> {
-                Log.d(TAG, "Work is ${workInfo.state}.")
-                // Ensure loading is true if work is active
-                if (!_uiState.value.isLoadingLocationData) { // Avoid unnecessary updates
-                    _uiState.update { it.copy(isLoadingLocationData = true, error = null) }
-                }
-            }
-        }
-    }
-
-    private fun processLocationList(workInfo: WorkInfo) {
-        when (workInfo.state) {
-            WorkInfo.State.SUCCEEDED -> {
-                val outputData = workInfo.outputData
-                val success = outputData.getBoolean(USLocationWorker.OUTPUT_SUCCESS, false)
-                if (success) {
-                    val locationJson = outputData.getString(USLocationWorker.LOCATION_JSON)
-                    val type = object : TypeToken<List<WeatherLocationResponse>>() {}.type
-                    val data = gson.fromJson<List<WeatherLocationResponse>>(locationJson, type)
-                    _uiState.update { it.copy(availableLocations = data.map { location -> getLocationOptionData(location) },
-                        isLoadingLocationList = false, error = null) }
-                }
-            }
-            WorkInfo.State.FAILED , WorkInfo.State.CANCELLED -> {
-                val errorMsg = workInfo.outputData.getString(USLocationWorker.OUTPUT_ERROR_MESSAGE)
-                    ?: "Unknown error"
-                Log.e(TAG, "Work failed: $errorMsg")
-                _uiState.update { it.copy(availableLocations = emptyList(),
-                    isLoadingLocationList = false, error = errorMsg) }
-            }
-            else -> {
-                Log.d(TAG, "Work is ${workInfo.state}.")
-                // Ensure loading is true if work is active
-                if (!_uiState.value.isLoadingLocationList) { // Avoid unnecessary updates
-                    _uiState.update { it.copy(isLoadingLocationList = true, error = null) }
-                }
-            }
-        }
-    }
-
     // Helper function to map the API response (remains the same logic)
     private fun mapResponseToDisplayData(response: WeatherConditionResponse): WeatherDisplayData {
         val formattedTempFahrenheit = "${response.temperature?.imperial?.value ?: "--"}°${response.temperature?.imperial?.unit ?: ""}"
@@ -335,18 +241,6 @@ class MainViewModel @Inject constructor(
         )
     }
 
-    private fun getLocationOptionData(response: WeatherLocationResponse) :LocationOption {
-        return LocationOption(
-            value = response.localizedName ?: response.englishName ?: "Unknown City",
-            key = response.key ?: "Unknown Key")
-    }
-
-    private fun getLocationDisplayData(response: WeatherLocationResponse) :LocationDisplayData {
-        return LocationDisplayData(
-            locationName = response.localizedName ?: response.englishName ?: "Unknown City",
-            adminArea = response.administrativeArea?.localizedName ?: response.administrativeArea?.id ?: "Unknown Area",
-            country = response.country?.localizedName ?: response.country?.id ?: "Unknown Country")
-    }
 
     companion object {
         const val TAG = "MainViewModel"

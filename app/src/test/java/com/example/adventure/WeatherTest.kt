@@ -9,7 +9,6 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import app.cash.turbine.test
 import com.example.adventure.data.network.model.WeatherLocationResponse
-import com.example.adventure.repository.CityRepository
 import com.example.adventure.repository.LocationRepository
 import com.example.adventure.viewmodel.MainViewModel
 import com.example.adventure.worker.USLocationWorker.Companion.LOCATION_JSON
@@ -58,9 +57,6 @@ class WeatherTest {
     private lateinit var mockGson : Gson
 
     @Mock
-    private lateinit var mockCityRepository : CityRepository
-
-    @Mock
     private lateinit var mockLocationRepository : LocationRepository
 
     @Mock
@@ -90,7 +86,7 @@ class WeatherTest {
         whenever(mockWorkManager.getWorkInfoByIdFlow(any())).thenReturn(mockWorkInfo)
 //        whenever(mockWorkManager.enqueueUniqueWork(any<String>(), any<ExistingWorkPolicy>(), any<OneTimeWorkRequest>())).thenReturn(mock())
 
-        viewModel = MainViewModel(mockWorkManager, mockGson, mockCityRepository, mockLocationRepository)
+        viewModel = MainViewModel(mockWorkManager, mockGson, mockLocationRepository)
         generatedWorkerUID = workRequestCaptor.firstValue.id
     }
 
@@ -107,7 +103,7 @@ class WeatherTest {
             val initialState = awaitItem()
             assertFalse("isLoadingWeatherData be false initially", initialState.isLoadingWeatherData)
             assertFalse("isLoadingLocationData be false initially", initialState.isLoadingLocationData)
-            assertTrue("isLoadingLocationList will be true on load", initialState.isLoadingLocationList)
+            assertTrue("isLoadingLocationList will be true on load", initialState.isLoadingStateList)
             assertNull("weatherDisplayData should be null  initially", initialState.weatherDisplayData)
             assertNull("locationDisplayData should be null initially", initialState.locationDisplayData)
             assertNull("selectedLocation should be null initially", initialState.selectedLocation)
@@ -135,7 +131,7 @@ class WeatherTest {
             mockWorkInfo.value = succeededWorkInfo // Update the MutableStateFlow's value
             // THEN: The ViewModel's exposed states should now reflect SUCCEEDED
             val successState = awaitItem()
-            assertFalse("Work should be fully loaded", successState.isLoadingLocationList)
+            assertFalse("Work should be fully loaded", successState.isLoadingStateList)
             assertTrue("Work should not be running after succeeding", successState.availableLocations!!.isNotEmpty())
             cancelAndConsumeRemainingEvents()
         }
