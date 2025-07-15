@@ -11,15 +11,11 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.example.adventure.data.network.model.WeatherConditionResponse
-import com.example.adventure.data.network.model.WeatherLocationResponse
 import com.example.adventure.state.WeatherUiState
 import com.example.adventure.repository.LocationRepository
 import com.example.adventure.util.WeatherIconMapper
-import com.example.adventure.worker.LocationKeyWorker
-import com.example.adventure.worker.USLocationWorker
 import com.example.adventure.worker.WeatherWorker
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

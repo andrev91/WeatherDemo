@@ -102,13 +102,13 @@ class WeatherTest {
         viewModel.uiState.test {
             val initialState = awaitItem()
             assertFalse("isLoadingWeatherData be false initially", initialState.isLoadingWeatherData)
-            assertFalse("isLoadingLocationData be false initially", initialState.isLoadingLocationData)
-            assertTrue("isLoadingLocationList will be true on load", initialState.isLoadingStateList)
+            assertFalse("isLoadingCityData be false initially", initialState.isLoadingCityList)
+            assertTrue("isLoadingStateList will be true on load", initialState.isLoadingStateList)
             assertNull("weatherDisplayData should be null  initially", initialState.weatherDisplayData)
-            assertNull("locationDisplayData should be null initially", initialState.locationDisplayData)
-            assertNull("selectedLocation should be null initially", initialState.selectedLocation)
+            assertNull("selectedState should be null initially", initialState.selectedState)
+            assertNull("selectedCity should be null initially", initialState.selectedCity)
             assertNull("error should be null initially", initialState.error)
-            assertTrue("locationList should be empty initially", initialState.availableLocations.isNullOrEmpty())
+            assertTrue("weather data should be empty initially", initialState.weatherDisplayData == null)
             cancelAndConsumeRemainingEvents()
         }
     }
@@ -132,7 +132,7 @@ class WeatherTest {
             // THEN: The ViewModel's exposed states should now reflect SUCCEEDED
             val successState = awaitItem()
             assertFalse("Work should be fully loaded", successState.isLoadingStateList)
-            assertTrue("Work should not be running after succeeding", successState.availableLocations!!.isNotEmpty())
+            assertTrue("Work should not be running after succeeding", successState.availableStates!!.isNotEmpty())
             cancelAndConsumeRemainingEvents()
         }
     }
