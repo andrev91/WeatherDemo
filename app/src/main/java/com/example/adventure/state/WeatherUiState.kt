@@ -5,14 +5,23 @@ import com.example.adventure.viewmodel.UnitType
 import com.example.adventure.viewmodel.WeatherDisplayData
 
 data class WeatherUiState(
-    val isLoadingWeatherData: Boolean = false,
-    val isLoadingStateList: Boolean = false,
-    val isLoadingCityList: Boolean = false,
-    val weatherDisplayData: WeatherDisplayData? = null,
+    val locationState : LocationSelectionState = LocationSelectionState(),
+    val weatherState : WeatherDataState = WeatherDataState(),
+    val error: String? = null
+)
+
+data class LocationSelectionState(
+    val isLoadingStates: Boolean = false,
     val availableStates: List<LocationRepository.State>? = null,
-    val availableCities: List<String>? = null,
     val selectedState: LocationRepository.State? = null,
+
+    val isLoadingCities: Boolean = false,
+    val availableCities: List<String>? = null,
     val selectedCity: String? = null,
-    val error: String? = null,
-    var temperatureUnit: UnitType = UnitType.CELSIUS
+)
+
+data class WeatherDataState(
+    val isLoadingWeather: Boolean = false,
+    val displayData: WeatherDisplayData? = null,
+    val temperatureUnit: UnitType = UnitType.CELSIUS
 )

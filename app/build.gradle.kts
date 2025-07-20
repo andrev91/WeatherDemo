@@ -62,6 +62,11 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.11"
     }
+    sourceSets {
+        getByName("main") {
+            assets.srcDirs("src/main/assets")
+        }
+    }
 //    testOptions {
 //        unitTests.all { test-> test.jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005") }
 //    }
