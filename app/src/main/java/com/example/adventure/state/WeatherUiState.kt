@@ -14,10 +14,13 @@ data class LocationSelectionState(
     val isLoadingStates: Boolean = false,
     val availableStates: List<LocationRepository.State>? = null,
     val selectedState: LocationRepository.State? = null,
-
+    val stateSearchQuery: String = "",
+    val filteredStates: List<LocationRepository.State> = emptyList(),
     val isLoadingCities: Boolean = false,
     val availableCities: List<String>? = null,
     val selectedCity: String? = null,
+    val citySearchQuery: String = "",
+    val filteredCities: List<String> = emptyList()
 )
 
 data class WeatherDataState(

@@ -78,21 +78,44 @@ class MainViewModel @Inject constructor(
         if (state == _uiState.value.locationState.selectedState) return
 
         updateLocationState { currentState -> currentState.copy(selectedState = state, isLoadingStates = false
-        , isLoadingCities = true, selectedCity = null, availableCities = null) }
+        , isLoadingCities = true, selectedCity = null, availableCities = null, stateSearchQuery = state.name, citySearchQuery = "") }
         updateWeatherState { currentState -> currentState.copy(displayData = null) }
         _uiState.update { it.copy(error = null) }
 
-//        viewModelScope.launch {
+        viewModelScope.launch {
             val cities = locationRepository.getMajorCitiesByState(state.abbreviation)
             updateLocationState { currentState -> currentState.copy(availableCities = cities, isLoadingCities = false) }
-//        }
+        }
     }
 
     fun setSelectedCity(city: String) {
         if (city == _uiState.value.locationState.selectedCity) return
-        updateLocationState { currentState -> currentState.copy(selectedCity = city) }
+        updateLocationState { currentState -> currentState.copy(selectedCity = city, citySearchQuery = "") }
         updateWeatherState { currentState -> currentState.copy(displayData = null) }
         _uiState.update { it.copy(error = null) }
+    }
+
+    fun searchStateList(query: String) {
+        _uiState.update { it.copy(error = null) }
+        updateLocationState { currentState ->
+            val filteredStates = if (query.isBlank()) { currentState.availableStates }
+            else {
+                currentState.availableStates?.filter { state ->
+                    state.name.contains(query, ignoreCase = true)
+                } ?: emptyList()
+            }
+            currentState.copy(stateSearchQuery = query, filteredStates = filteredStates!!)
+        }
+    }
+
+    fun searchCityList(query: String) {
+        if (_uiState.value.locationState.citySearchQuery == query) return
+        updateLocationState { currentState -> currentState.copy(citySearchQuery = query) }
+        _uiState.update { it.copy(error = null) }
+        val filteredCities = _uiState.value.locationState.availableCities?.filter { city ->
+            city.contains(query, ignoreCase = true)
+        }
+        updateLocationState { currentState -> currentState.copy(filteredCities = filteredCities ?: emptyList()) }
     }
 
     private fun fetchWeather(locationKey: String = "") {
@@ -116,7 +139,7 @@ class MainViewModel @Inject constructor(
         updateWeatherState { currentState -> currentState.copy(displayData = null, isLoadingWeather = true) }
         _uiState.update { it.copy(error = null) }
         val state = uiState.value.locationState.selectedState?.name ?: return
-        val city = uiState.value.locationState.selectedCity ?: return
+        val city = uiState.value.locationState.selectedCity ?: ""
 
         viewModelScope.launch {
             locationRepository.getOrFetchLocation("$state,$city")
@@ -142,7 +165,8 @@ class MainViewModel @Inject constructor(
             selectedCity = null, availableStates = null, availableCities = null) }
         _uiState.update { it.copy(error = null) }
         val stateData = locationRepository.getStates()
-        updateLocationState { currentState -> currentState.copy(availableStates = stateData, isLoadingStates = false) }
+        updateLocationState { currentState -> currentState.copy(availableStates = stateData, filteredStates = stateData,
+            isLoadingStates = false) }
     }
 
     private fun observerWeatherWork(uuid: UUID) {

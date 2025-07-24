@@ -36,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -70,7 +71,9 @@ fun WeatherScreen(viewModel: MainViewModel = hiltViewModel()) {
 
     WeatherScreenContent(uiState = uiState,
         onStateSelected = { selectedLocation -> viewModel.setSelectedState(selectedLocation!!) },
+        onStateSearch = { viewModel.searchStateList(it) },
         onCitySelected = { viewModel.setSelectedCity(it) },
+        onCitySearch = { viewModel.setSelectedCity(it) },
         onRefreshClicked = { viewModel.searchLocation() },
         onUnitSelected = { viewModel.triggerTempTypeChange(it) }
     )
@@ -79,7 +82,9 @@ fun WeatherScreen(viewModel: MainViewModel = hiltViewModel()) {
 @Composable
 fun WeatherScreenContent(uiState: WeatherUiState,
                          onStateSelected: (LocationRepository.State?) -> Unit,
+                         onStateSearch: (String) -> Unit,
                          onCitySelected: (String) -> Unit,
+                         onCitySearch: (String) -> Unit,
                          onRefreshClicked: () -> Unit,
                          onUnitSelected : (UnitType) -> Unit) {
     val scrollState = rememberScrollState()
@@ -89,7 +94,16 @@ fun WeatherScreenContent(uiState: WeatherUiState,
         Text("Accuweather Data", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
 
-        USStateLocations(uiState = uiState.locationState, onStateSelected)
+        SearchableDropDown(
+            label = "US State",
+            testTag = TAG_LOCATION_DESC,
+            options = uiState.locationState.filteredStates,
+            selectedOption = uiState.locationState.selectedState?.name ?: "",
+            searchQuery = uiState.locationState.stateSearchQuery,
+            onSearchQueryChanged = onStateSearch,
+            onOptionSelected = onStateSelected
+        ) { it.name }
+//        USStateLocations(uiState = uiState.locationState, onStateSelected)
         Spacer(Modifier.height(8.dp))
         if (uiState.locationState.selectedState != null && !uiState.locationState.availableCities.isNullOrEmpty()) {
             CityDropDown(uiState = uiState.locationState, onCitySelected)
@@ -258,6 +272,64 @@ fun CityDropDown(uiState: LocationSelectionState, onCitySelected: (String) -> Un
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun <T> SearchableDropDown(
+    label: String,
+    testTag: String,
+    options: List<T>,
+    selectedOption: String,
+    searchQuery: String,
+    onSearchQueryChanged: (String) -> Unit,
+    onOptionSelected: (T) -> Unit,
+    optionToString: (T) -> String = { it.toString() }
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val focusController = LocalFocusManager.current
+
+    Box(modifier = Modifier.fillMaxWidth(0.8f)) {
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = {
+                expanded = it
+                if (expanded) { //First time expanding - reset search query from previous selection
+                    onSearchQueryChanged("")
+                }
+            }
+        ) {
+            OutlinedTextField(
+                modifier = Modifier
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
+                    .fillMaxWidth()
+                    .testTag(testTag),
+                value = searchQuery,
+                onValueChange = { query ->
+                    onSearchQueryChanged(query)
+                    expanded = true // Keep the dropdown open while searching
+                },
+                label = { Text(label) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                singleLine = true
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                options.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(optionToString(option)) },
+                        onClick = {
+                            onOptionSelected(option)
+                            expanded = false
+                            focusController.clearFocus()
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun WeatherDetails(data: WeatherDisplayData, unit : UnitType = UnitType.CELSIUS) {
     Card(elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)) {
@@ -301,7 +373,7 @@ fun PreviewWeatherScreenContent_Loading() {
             WeatherDataState(isLoadingWeather = true)),
             onStateSelected = { LocationRepository.State("Georgia", "GA") },
             onCitySelected = { listOf("Dunwoody","Powder Springs, Marietta") },
-            onRefreshClicked = {}, onUnitSelected = {})
+            onRefreshClicked = {}, onUnitSelected = {}, onStateSearch = {}, onCitySearch = {})
     }
 }
 
@@ -319,7 +391,7 @@ fun PreviewWeatherScreenContent_Success() {
             ),
             onStateSelected = { LocationRepository.State("Georgia", "GA") },
             onCitySelected = { listOf("Dunwoody","Powder Springs, Marietta") },
-            onRefreshClicked = {},onUnitSelected = {}
+            onRefreshClicked = {},onUnitSelected = {}, onStateSearch = {}, onCitySearch = {}
         )
     }
 }
@@ -334,7 +406,7 @@ fun PreviewWeatherScreenContent_Error() {
                 error = "Network Error"),
             onStateSelected = { LocationRepository.State("Georgia", "GA") },
             onCitySelected = { listOf("Dunwoody","Powder Springs, Marietta") },
-            onRefreshClicked = {}, onUnitSelected = {}
+            onRefreshClicked = {}, onUnitSelected = {}, onStateSearch = {}, onCitySearch = {}
         )
     }
 }
