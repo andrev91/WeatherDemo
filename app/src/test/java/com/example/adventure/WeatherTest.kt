@@ -117,7 +117,7 @@ class WeatherTest {
             awaitItem()
             val data1 = WeatherLocationResponse(key = null, englishName = "New York", localizedName = "New York",
                 region = null, administrativeArea = null, country = null)
-            val test = Json.encodeToString(data1)
+            val test = Json.encodeToString(listOf(data1))
             val succeededWorkInfo = WorkInfo(
                 generatedWorkerUID,
                 WorkInfo.State.SUCCEEDED,
