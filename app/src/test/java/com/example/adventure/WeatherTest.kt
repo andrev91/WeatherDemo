@@ -13,8 +13,6 @@ import com.example.adventure.repository.LocationRepository
 import com.example.adventure.viewmodel.MainViewModel
 import com.example.adventure.worker.USLocationWorker.Companion.LOCATION_JSON
 import com.example.adventure.worker.USLocationWorker.Companion.OUTPUT_SUCCESS
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertNull
 import junit.framework.TestCase.assertTrue
@@ -26,6 +24,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.serialization.json.Json
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -52,9 +51,6 @@ class WeatherTest {
 
     @Mock
     private lateinit var mockWorkManager : WorkManager
-
-    @Mock
-    private lateinit var mockGson : Gson
 
     @Mock
     private lateinit var mockLocationRepository : LocationRepository
@@ -86,7 +82,7 @@ class WeatherTest {
         whenever(mockWorkManager.getWorkInfoByIdFlow(any())).thenReturn(mockWorkInfo)
 //        whenever(mockWorkManager.enqueueUniqueWork(any<String>(), any<ExistingWorkPolicy>(), any<OneTimeWorkRequest>())).thenReturn(mock())
 
-        viewModel = MainViewModel(mockWorkManager, mockGson, mockLocationRepository)
+        viewModel = MainViewModel(mockWorkManager, mockLocationRepository)
         generatedWorkerUID = workRequestCaptor.firstValue.id
     }
 
@@ -121,8 +117,7 @@ class WeatherTest {
             awaitItem()
             val data1 = WeatherLocationResponse(key = null, englishName = "New York", localizedName = "New York",
                 region = null, administrativeArea = null, country = null)
-            val listType = object : TypeToken<List<WeatherLocationResponse>>() {}.type
-            val test = Gson().toJson(listOf(data1), listType)
+            val test : List<WeatherLocationResponse> = Json.decodeFromString(data1)
             val succeededWorkInfo = WorkInfo(
                 generatedWorkerUID,
                 WorkInfo.State.SUCCEEDED,
