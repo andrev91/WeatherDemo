@@ -17,7 +17,6 @@ import com.example.adventure.state.LocationSelectionState
 import com.example.adventure.state.WeatherDataState
 import com.example.adventure.util.WeatherIconMapper
 import com.example.adventure.worker.WeatherWorker
-import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +27,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import java.util.UUID
 import javax.inject.Inject
 
@@ -57,7 +57,6 @@ enum class UnitType {
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val workManager: WorkManager,
-    private val gson: Gson,
     private val locationRepository: LocationRepository
     ) : ViewModel() {
 
@@ -188,8 +187,7 @@ class MainViewModel @Inject constructor(
                     if (weatherJson != null) {
                         try {
                             // --- Parse JSON from Worker Output ---
-                            val response =
-                                gson.fromJson(weatherJson, WeatherConditionResponse::class.java)
+                            val response = Json.decodeFromString<WeatherConditionResponse>(weatherJson)
                             updateWeatherState { currentState ->
                                 currentState.copy(displayData = mapResponseToDisplayData(response),
                                     isLoadingWeather = false)

@@ -7,19 +7,16 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.example.adventure.api.ApiService
-import com.example.adventure.data.network.model.WeatherLocationResponse
 import com.example.adventure.network.NetworkModule
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 
 @HiltWorker
 class USLocationWorker @AssistedInject constructor(@Assisted context: Context, @Assisted params: WorkerParameters,
    private val apiService: ApiService,
-   private val gson: Gson,
    @NetworkModule.ApiKey private val apiKey: String // Inject API key safely
 ): CoroutineWorker(context, params) {
 
@@ -35,8 +32,7 @@ class USLocationWorker @AssistedInject constructor(@Assisted context: Context, @
                         Result.failure(workDataOf(OUTPUT_SUCCESS to false, OUTPUT_ERROR_MESSAGE to "No displayable locations found."))
                     }
 
-                    val listType = object : TypeToken<List<WeatherLocationResponse>>() {}.type
-                    val locationsJson = gson.toJson(body, listType)
+                    val locationsJson = Json.encodeToString(body)
 
                     val outputData = workDataOf(
                         OUTPUT_SUCCESS to true,

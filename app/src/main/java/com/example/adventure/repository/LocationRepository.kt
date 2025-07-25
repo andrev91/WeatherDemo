@@ -5,29 +5,29 @@ import android.util.Log
 import com.example.adventure.data.local.LocationDao
 import com.example.adventure.data.local.model.Location
 import com.example.adventure.data.network.LocationRemoteDataSource
-import com.google.gson.Gson
-import com.google.gson.annotations.SerializedName
-import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
 class LocationRepository @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val gson: Gson,
     private val locationDao: LocationDao,
     private val locationRemoteDataSource: LocationRemoteDataSource) {
 
+    @kotlinx.serialization.Serializable
     data class StateCities(
-        @SerializedName("major_cities") val majorCities: List<String> = emptyList(),
-        @SerializedName("all_cities")val allCities: List<String> = emptyList()
+        @SerialName("major_cities") val majorCities: List<String> = emptyList(),
+        @SerialName("all_cities")val allCities: List<String> = emptyList()
     )
+    @kotlinx.serialization.Serializable
     data class State(
         val name: String,
-        @SerializedName("code") val abbreviation: String
+        @SerialName("code") val abbreviation: String
     )
 
     fun getLocationByKey(key: String) = locationDao.getLocationByKey(key)
@@ -52,7 +52,7 @@ class LocationRepository @Inject constructor(
     private val _citiesData: Map<String, StateCities> by lazy {
         try {
             val json = context.assets.open("us_state_cities.json").bufferedReader().use { it.readText() }
-            val parsedData : Map<String, StateCities> = gson.fromJson(json, object : TypeToken<Map<String, StateCities>>() {}.type)
+            val parsedData : Map<String, StateCities> = Json.decodeFromString(json)
             return@lazy parsedData
         } catch (e: Exception) {
             Log.e("LocationRepository", "Error loading cities data", e)
@@ -63,7 +63,7 @@ class LocationRepository @Inject constructor(
     private val _statesData: List<State> by lazy {
         try {
             val json = context.assets.open("us_state.json").bufferedReader().use { it.readText() }
-            val parsedData : List<State> = gson.fromJson(json, object : TypeToken<List<State>>() {}.type)
+            val parsedData : List<State> = Json.decodeFromString(json)
             return@lazy parsedData
         } catch (e: Exception) {
             Log.e("LocationRepository", "Error loading states data", e)
