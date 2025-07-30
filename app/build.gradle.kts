@@ -34,8 +34,9 @@ android {
         testInstrumentationRunner = "com.example.adventure.TestRunner"
 
         val accuApiKey = getApiKey("ACCUWEATHER_API_KEY")
-        // Add quotes around the string value for BuildConfig field
+        val openWeatherApiKey = getApiKey("OPEN_WEATHER_API_KEY")
         buildConfigField("String", "ACCUWEATHER_API_KEY", "\"$accuApiKey\"")
+        buildConfigField("String", "OPEN_WEATHER_API_KEY", "\"$openWeatherApiKey\"")
     }
 
     buildTypes {
