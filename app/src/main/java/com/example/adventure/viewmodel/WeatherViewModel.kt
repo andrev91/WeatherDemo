@@ -1,6 +1,7 @@
 package com.example.adventure.viewmodel
 
 import android.util.Log
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.Constraints
@@ -77,7 +78,7 @@ class MainViewModel @Inject constructor(
         if (state == _uiState.value.locationState.selectedState) return
 
         updateLocationState { currentState -> currentState.copy(selectedState = state, isLoadingStates = false
-        , isLoadingCities = true, selectedCity = null, availableCities = null, stateSearchQuery = state.name, citySearchQuery = "") }
+        , isLoadingCities = true, selectedCity = null, availableCities = null, stateSearchQuery = TextFieldValue(state.name), citySearchQuery = "") }
         updateWeatherState { currentState -> currentState.copy(displayData = null) }
         _uiState.update { it.copy(error = null) }
 
@@ -87,6 +88,11 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun clearStateSelection() {
+        updateLocationState { currentState -> currentState.copy(selectedState = null, isLoadingStates = false, filteredStates = emptyList(),
+            isLoadingCities = false, selectedCity = null, availableCities = null, stateSearchQuery = TextFieldValue(""), citySearchQuery = "") }
+    }
+
     fun setSelectedCity(city: String) {
         if (city == _uiState.value.locationState.selectedCity) return
         updateLocationState { currentState -> currentState.copy(selectedCity = city, citySearchQuery = "") }
@@ -94,13 +100,13 @@ class MainViewModel @Inject constructor(
         _uiState.update { it.copy(error = null) }
     }
 
-    fun searchStateList(query: String) {
+    fun searchStateList(query: TextFieldValue) {
         _uiState.update { it.copy(error = null) }
         updateLocationState { currentState ->
-            val filteredStates = if (query.isBlank()) { currentState.availableStates }
+            val filteredStates = if (query.text.isBlank()) { currentState.availableStates }
             else {
                 currentState.availableStates?.filter { state ->
-                    state.name.contains(query, ignoreCase = true)
+                    state.name.contains(query.text, ignoreCase = true)
                 } ?: emptyList()
             }
             currentState.copy(stateSearchQuery = query, filteredStates = filteredStates!!)
