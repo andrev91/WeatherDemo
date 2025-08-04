@@ -1,7 +1,7 @@
-package com.example.adventure.state
+package com.example.adventure.ui.state
 
 import androidx.compose.ui.text.input.TextFieldValue
-import com.example.adventure.repository.LocationRepository
+import com.example.adventure.data.model.State
 import com.example.adventure.viewmodel.UnitType
 import com.example.adventure.viewmodel.WeatherDisplayData
 
@@ -13,14 +13,14 @@ data class WeatherUiState(
 
 data class LocationSelectionState(
     val isLoadingStates: Boolean = false,
-    val availableStates: List<LocationRepository.State>? = null,
-    val selectedState: LocationRepository.State? = null,
+    val availableStates: List<State>? = emptyList(),
+    val selectedState: State? = null,
     val stateSearchQuery: TextFieldValue = TextFieldValue(""),
-    val filteredStates: List<LocationRepository.State> = emptyList(),
+    val filteredStates: List<State> = emptyList(),
     val isLoadingCities: Boolean = false,
-    val availableCities: List<String>? = null,
+    val availableCities: List<String>? = emptyList(),
     val selectedCity: String? = null,
-    val citySearchQuery: String = "",
+    val citySearchQuery: TextFieldValue = TextFieldValue(""),
     val filteredCities: List<String> = emptyList()
 )
 

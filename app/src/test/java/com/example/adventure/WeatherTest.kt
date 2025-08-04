@@ -9,7 +9,7 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import app.cash.turbine.test
 import com.example.adventure.data.network.model.WeatherLocationResponse
-import com.example.adventure.repository.LocationRepository
+import com.example.adventure.data.repository.LocationRepository
 import com.example.adventure.viewmodel.MainViewModel
 import com.example.adventure.worker.USLocationWorker.Companion.LOCATION_JSON
 import com.example.adventure.worker.USLocationWorker.Companion.OUTPUT_SUCCESS

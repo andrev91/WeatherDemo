@@ -12,10 +12,12 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.example.adventure.data.network.model.WeatherConditionResponse
-import com.example.adventure.state.WeatherUiState
-import com.example.adventure.repository.LocationRepository
-import com.example.adventure.state.LocationSelectionState
-import com.example.adventure.state.WeatherDataState
+import com.example.adventure.data.repository.LocationRepository
+import com.example.adventure.ui.state.LocationSelectionState
+import com.example.adventure.ui.state.LocationType
+import com.example.adventure.ui.state.LocationType.*
+import com.example.adventure.ui.state.WeatherDataState
+import com.example.adventure.ui.state.WeatherUiState
 import com.example.adventure.util.WeatherIconMapper
 import com.example.adventure.worker.WeatherWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -74,33 +76,7 @@ class MainViewModel @Inject constructor(
         fetchStateList()
     }
 
-    fun setSelectedState(state: LocationRepository.State) {
-        if (state == _uiState.value.locationState.selectedState) return
-
-        updateLocationState { currentState -> currentState.copy(selectedState = state, isLoadingStates = false
-        , isLoadingCities = true, selectedCity = null, availableCities = null, stateSearchQuery = TextFieldValue(state.name), citySearchQuery = "") }
-        updateWeatherState { currentState -> currentState.copy(displayData = null) }
-        _uiState.update { it.copy(error = null) }
-
-        viewModelScope.launch {
-            val cities = locationRepository.getMajorCitiesByState(state.abbreviation)
-            updateLocationState { currentState -> currentState.copy(availableCities = cities, isLoadingCities = false) }
-        }
-    }
-
-    fun clearStateSelection() {
-        updateLocationState { currentState -> currentState.copy(selectedState = null, isLoadingStates = false, filteredStates = emptyList(),
-            isLoadingCities = false, selectedCity = null, availableCities = null, stateSearchQuery = TextFieldValue(""), citySearchQuery = "") }
-    }
-
-    fun setSelectedCity(city: String) {
-        if (city == _uiState.value.locationState.selectedCity) return
-        updateLocationState { currentState -> currentState.copy(selectedCity = city, citySearchQuery = "") }
-        updateWeatherState { currentState -> currentState.copy(displayData = null) }
-        _uiState.update { it.copy(error = null) }
-    }
-
-    fun searchStateList(query: TextFieldValue) {
+    private fun searchStateList(query: TextFieldValue) {
         _uiState.update { it.copy(error = null) }
         updateLocationState { currentState ->
             val filteredStates = if (query.text.isBlank()) { currentState.availableStates }
@@ -113,14 +89,74 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun searchCityList(query: String) {
-        if (_uiState.value.locationState.citySearchQuery == query) return
-        updateLocationState { currentState -> currentState.copy(citySearchQuery = query) }
-        _uiState.update { it.copy(error = null) }
-        val filteredCities = _uiState.value.locationState.availableCities?.filter { city ->
-            city.contains(query, ignoreCase = true)
+    fun clearDropdownSelection(locationType : LocationType) {
+        when (locationType) {
+            STATE -> {
+                updateLocationState { currentState -> currentState.copy(selectedState = null, isLoadingStates = false, filteredStates = emptyList(),
+                    isLoadingCities = false, selectedCity = null, availableCities = null,
+                    stateSearchQuery = TextFieldValue(""), citySearchQuery = TextFieldValue("")) }
+            }
+            CITY -> {
+                updateLocationState { currentState -> currentState.copy(
+                    isLoadingCities = false, selectedCity = null, filteredCities = emptyList(), citySearchQuery = TextFieldValue("")) }
+            }
         }
-        updateLocationState { currentState -> currentState.copy(filteredCities = filteredCities ?: emptyList()) }
+        updateWeatherState { currentState -> currentState.copy(displayData = null) }
+        _uiState.update { it.copy(error = null) }
+    }
+
+    fun setDropdownSelection(locationType : LocationType, location: String) {
+        when (locationType) {
+            STATE -> {
+                val state = locationRepository.getStateFromString(location) ?: return
+                if (state == _uiState.value.locationState.selectedState) return
+
+                updateLocationState { currentState -> currentState.copy(selectedState = state, isLoadingStates = false
+                    , isLoadingCities = true, selectedCity = null, availableCities = null,
+                    stateSearchQuery = TextFieldValue(state.name), citySearchQuery = TextFieldValue("")) }
+                updateWeatherState { currentState -> currentState.copy(displayData = null) }
+                _uiState.update { it.copy(error = null) }
+
+                viewModelScope.launch {
+                    val cities = locationRepository.getMajorCitiesByState(state.abbreviation)
+                    updateLocationState { currentState -> currentState.copy(availableCities = cities, isLoadingCities = false) }
+                }
+            }
+            CITY -> {
+                if (location == _uiState.value.locationState.selectedCity) return
+                updateLocationState { currentState -> currentState.copy(selectedCity = location, citySearchQuery = TextFieldValue(location)) }
+                updateWeatherState { currentState -> currentState.copy(displayData = null) }
+                _uiState.update { it.copy(error = null) }
+            }
+        }
+    }
+
+    fun searchDropdownList(locationType: LocationType, query: TextFieldValue) {
+        when (locationType) {
+            STATE -> {
+                searchStateList(query)
+            }
+            CITY -> {
+                searchCityList(query)
+            }
+        }
+    }
+
+    private fun searchCityList(query: TextFieldValue) {
+        if (_uiState.value.locationState.citySearchQuery == query) return
+        updateLocationState { currentState ->
+            _uiState.update { it.copy(error = null) }
+            val filteredCities = if (query.text.isBlank()) {
+                currentState.availableCities
+            } else {
+                val test = _uiState.value.locationState.selectedState?.abbreviation
+                val cities = locationRepository.getCities()[test]
+                cities!!.allCities
+                    .filter { city ->
+                        city.contains(query.text, ignoreCase = true)
+                    }
+            }
+        currentState.copy(citySearchQuery = query, filteredCities = filteredCities!!) }
     }
 
     private fun fetchWeather(locationKey: String = "") {
