@@ -9,13 +9,10 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import app.cash.turbine.test
 import com.example.adventure.data.network.model.WeatherLocationResponse
-import com.example.adventure.repository.CityRepository
-import com.example.adventure.repository.LocationRepository
+import com.example.adventure.data.repository.LocationRepository
 import com.example.adventure.viewmodel.MainViewModel
 import com.example.adventure.worker.USLocationWorker.Companion.LOCATION_JSON
 import com.example.adventure.worker.USLocationWorker.Companion.OUTPUT_SUCCESS
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertNull
 import junit.framework.TestCase.assertTrue
@@ -27,6 +24,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.serialization.json.Json
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -53,12 +51,6 @@ class WeatherTest {
 
     @Mock
     private lateinit var mockWorkManager : WorkManager
-
-    @Mock
-    private lateinit var mockGson : Gson
-
-    @Mock
-    private lateinit var mockCityRepository : CityRepository
 
     @Mock
     private lateinit var mockLocationRepository : LocationRepository
@@ -90,7 +82,7 @@ class WeatherTest {
         whenever(mockWorkManager.getWorkInfoByIdFlow(any())).thenReturn(mockWorkInfo)
 //        whenever(mockWorkManager.enqueueUniqueWork(any<String>(), any<ExistingWorkPolicy>(), any<OneTimeWorkRequest>())).thenReturn(mock())
 
-        viewModel = MainViewModel(mockWorkManager, mockGson, mockCityRepository, mockLocationRepository)
+        viewModel = MainViewModel(mockWorkManager, mockLocationRepository)
         generatedWorkerUID = workRequestCaptor.firstValue.id
     }
 
@@ -105,14 +97,15 @@ class WeatherTest {
     fun `init state of view model and fetching locations`() = runTest {
         viewModel.uiState.test {
             val initialState = awaitItem()
-            assertFalse("isLoadingWeatherData be false initially", initialState.isLoadingWeatherData)
-            assertFalse("isLoadingLocationData be false initially", initialState.isLoadingLocationData)
-            assertTrue("isLoadingLocationList will be true on load", initialState.isLoadingLocationList)
-            assertNull("weatherDisplayData should be null  initially", initialState.weatherDisplayData)
-            assertNull("locationDisplayData should be null initially", initialState.locationDisplayData)
-            assertNull("selectedLocation should be null initially", initialState.selectedLocation)
+
+
+            assertFalse("isLoadingWeatherData be false initially", initialState.weatherState.isLoadingWeather)
+            assertFalse("isLoadingCityData be false initially", initialState.locationState.isLoadingCities)
+            assertTrue("isLoadingStateList will be true on load", initialState.locationState.isLoadingStates)
+            assertNull("weatherDisplayData should be null initially", initialState.weatherState.displayData)
+            assertNull("selectedState should be null initially", initialState.locationState.selectedState)
+            assertNull("selectedCity should be null initially", initialState.locationState.selectedCity)
             assertNull("error should be null initially", initialState.error)
-            assertTrue("locationList should be empty initially", initialState.availableLocations.isNullOrEmpty())
             cancelAndConsumeRemainingEvents()
         }
     }
@@ -124,8 +117,7 @@ class WeatherTest {
             awaitItem()
             val data1 = WeatherLocationResponse(key = null, englishName = "New York", localizedName = "New York",
                 region = null, administrativeArea = null, country = null)
-            val listType = object : TypeToken<List<WeatherLocationResponse>>() {}.type
-            val test = Gson().toJson(listOf(data1), listType)
+            val test = Json.encodeToString(listOf(data1))
             val succeededWorkInfo = WorkInfo(
                 generatedWorkerUID,
                 WorkInfo.State.SUCCEEDED,
@@ -135,8 +127,8 @@ class WeatherTest {
             mockWorkInfo.value = succeededWorkInfo // Update the MutableStateFlow's value
             // THEN: The ViewModel's exposed states should now reflect SUCCEEDED
             val successState = awaitItem()
-            assertFalse("Work should be fully loaded", successState.isLoadingLocationList)
-            assertTrue("Work should not be running after succeeding", successState.availableLocations!!.isNotEmpty())
+            assertFalse("Work should be fully loaded", successState.locationState.isLoadingStates)
+             assertTrue("Work should not be running after succeeding", successState.locationState.availableStates!!.isNotEmpty())
             cancelAndConsumeRemainingEvents()
         }
     }

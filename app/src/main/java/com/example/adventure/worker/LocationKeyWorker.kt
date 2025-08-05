@@ -8,16 +8,15 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.example.adventure.api.ApiService
 import com.example.adventure.network.NetworkModule
-import com.google.gson.Gson
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 
 @HiltWorker
 class LocationKeyWorker @AssistedInject constructor(@Assisted context: Context, @Assisted params: WorkerParameters,
     private val apiService: ApiService,
-    private val gson: Gson,
     @NetworkModule.ApiKey private val apiKey: String // Inject API key safely
 ): CoroutineWorker(context, params) {
 
@@ -35,7 +34,7 @@ class LocationKeyWorker @AssistedInject constructor(@Assisted context: Context, 
                     val outputData = workDataOf(
                         OUTPUT_SUCCESS to true,
                         LOCATION_KEY to inputData,
-                        LOCATION_JSON to gson.toJson(body)
+                        LOCATION_JSON to Json.encodeToString(body)
                     )
                     Result.success(outputData)
                 } else {

@@ -1,52 +1,52 @@
 package com.example.adventure.data.network.model
 
-import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class WeatherLocationResponse(
-    @SerializedName("Key")
+    @SerialName("Key")
     val key: String?,
-    @SerializedName("EnglishName")
+    @SerialName("EnglishName")
     val englishName: String?,
-    @SerializedName("LocalizedName")
+    @SerialName("LocalizedName")
     val localizedName: String?,
-    @SerializedName("Region")
+    @SerialName("Region")
     val region: Region? = null,
-    @SerializedName("Country")
+    @SerialName("Country")
     val country: Country? = null,
-    @SerializedName("AdministrativeArea")
+    @SerialName("AdministrativeArea")
     val administrativeArea: AdministrativeArea? = null
 )
 
 @Serializable
 data class Region(
-    @SerializedName("ID")
+    @SerialName("ID")
     val id: String?,
-    @SerializedName("LocalizedName")
+    @SerialName("LocalizedName")
     val localizedName: String?, // e.g., "North America"
-    @SerializedName("EnglishName")
+    @SerialName("EnglishName")
     val englishName: String?
 )
 
 @Serializable
 data class Country(
-    @SerializedName("ID")
+    @SerialName("ID")
     val id: String?, // e.g., "US"
-    @SerializedName("LocalizedName")
+    @SerialName("LocalizedName")
     val localizedName: String?, // e.g., "United States"
-    @SerializedName("EnglishName")
+    @SerialName("EnglishName")
     val englishName: String?
 )
 
 @Serializable
 data class AdministrativeArea(
-    @SerializedName("ID")
+    @SerialName("ID")
     val id: String?, // e.g., "NY"
-    @SerializedName("LocalizedName")
+    @SerialName("LocalizedName")
     val localizedName: String?, // e.g., "New York"
-    @SerializedName("EnglishName")
+    @SerialName("EnglishName")
     val englishName: String?,
-    @SerializedName("Level")
+    @SerialName("Level")
     val level: Int?
 )

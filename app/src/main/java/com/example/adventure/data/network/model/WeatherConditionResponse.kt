@@ -1,58 +1,60 @@
 package com.example.adventure.data.network.model
 
-import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class WeatherConditionResponse(
-    @SerializedName("LocalObservationDateTime") // ADD SerializedName
+    @SerialName("LocalObservationDateTime") // ADD SerialName
     val localObservationDateTime: String?,
-    @SerializedName("EpochTime")
+    @SerialName("EpochTime")
     val epochTime: Long?,
-    @SerializedName("WeatherText")
+    @SerialName("WeatherText")
     val weatherText: String?,
-    @SerializedName("WeatherIcon")
+    @SerialName("WeatherIcon")
     val weatherIcon: Int?,
-    @SerializedName("LocalSource")
-    val localSource: LocalSource?,
-    @SerializedName("HasPrecipitation")
+    //As of 7/24/2025 - this data is not returning on the API.
+    //ktx json throws error if it is not present
+//    @SerialName("LocalSource")
+//    val localSource: LocalSource?,
+    @SerialName("HasPrecipitation")
     val hasPrecipitation: Boolean?,
-    @SerializedName("PrecipitationType")
+    @SerialName("PrecipitationType")
     val precipitationType: String?,
-    @SerializedName("IsDayTime")
+    @SerialName("IsDayTime")
     val isDayTime: Boolean?,
-    @SerializedName("Temperature")
+    @SerialName("Temperature")
     val temperature: Temperature?,
-    @SerializedName("MobileLink")
+    @SerialName("MobileLink")
     val mobileLink: String?,
-    @SerializedName("Link")
+    @SerialName("Link")
     val link: String?
 )
 
 @Serializable
 data class LocalSource(
-//    @SerializedName("ID")
-//    val id: Int?,
-    @SerializedName("Name")
+    @SerialName("ID")
+    val id: Int?,
+    @SerialName("Name")
     val name: String?,
-    @SerializedName("WeatherCode")
+    @SerialName("WeatherCode")
     val weatherCode: String?
 )
 
 @Serializable
 data class Temperature(
-    @SerializedName("Metric")
+    @SerialName("Metric")
     val metric: TemperatureUnit?,
-    @SerializedName("Imperial")
+    @SerialName("Imperial")
     val imperial: TemperatureUnit?
 )
 
 @Serializable
 data class TemperatureUnit(
-    @SerializedName("Value")
+    @SerialName("Value")
     val value: Double?,
-    @SerializedName("Unit")
+    @SerialName("Unit")
     val unit: String?,
-    @SerializedName("UnitType")
+    @SerialName("UnitType")
     val unitType: Int?
 )
