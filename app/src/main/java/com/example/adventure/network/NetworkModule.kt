@@ -1,8 +1,9 @@
 package com.example.adventure.network
 
 import com.example.adventure.BuildConfig
-import com.example.adventure.api.ApiService
+import com.example.adventure.api.ApiServic
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import com.example.adventure.util.ApiServiceHost
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -18,8 +19,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-        private const val API_KEY = "KEY"
-        private const val URL = "https://dataservice.accuweather.com/"
         private val json = Json { ignoreUnknownKeys = true }
 
         @Provides
@@ -42,7 +41,7 @@ object NetworkModule {
         @Singleton
         fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
                 return Retrofit.Builder()
-                        .baseUrl(URL)
+                        .baseUrl(ApiServiceHost.getActive().baseUrl)
                         .client(okHttpClient)
                         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
                         .build()
@@ -53,9 +52,10 @@ object NetworkModule {
         @ApiKey // Custom qualifier if needed, simple string injection for now
         fun provideApiKey(): String {
                 // Basic check - replace with proper validation/handling
-                val apiKey = BuildConfig.ACCUWEATHER_API_KEY
-                if (apiKey.isBlank() || apiKey == API_KEY) {
-                        throw IllegalArgumentException("AccuWeather API Key is not set in BuildConfig. Please add it to your local.properties or gradle file.")
+                val apiKey = if (ApiServiceHost.ACCUWEATHER.isActive) BuildConfig.ACCUWEATHER_API_KEY
+                        else BuildConfig.OPEN_WEATHER_API_KEY
+                if (apiKey.isBlank()) {
+                        throw IllegalArgumentException("API Key is not set in BuildConfig. Please add it to your local.properties or gradle file.")
                 }
                 println("Using API Key: ...${apiKey.takeLast(4)}") // Avoid logging full key
                 return apiKey

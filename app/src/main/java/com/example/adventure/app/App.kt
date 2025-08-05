@@ -4,9 +4,8 @@ import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
-import java.util.Properties
 import javax.inject.Inject
-import androidx.core.content.edit
+import com.example.adventure.util.ApiServiceHost
 
 @HiltAndroidApp
 class App : Application(), Configuration.Provider {
@@ -15,6 +14,11 @@ class App : Application(), Configuration.Provider {
 
     override fun onLowMemory() {
         super.onLowMemory()
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        ApiServiceHost.setActive(ApiServiceHost.ACCUWEATHER)
     }
 
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
