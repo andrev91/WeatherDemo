@@ -1,7 +1,7 @@
 package com.example.adventure.network
 
 import com.example.adventure.BuildConfig
-import com.example.adventure.api.ApiServic
+import com.example.adventure.api.ApiService
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.example.adventure.util.ApiServiceHost
 import dagger.Module
