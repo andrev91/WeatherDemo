@@ -119,7 +119,9 @@ Contributions are welcome! If you have suggestions for improvements or find any 
 
 ---
 
-![image](https://github.com/user-attachments/assets/608ba194-482c-4c29-9823-4d89faa44dc6)
-![image](https://github.com/user-attachments/assets/eeb1d29b-1a43-4c1a-a1c0-c1f8b20a14a9)
-![image](https://github.com/user-attachments/assets/f45144a7-c44b-4734-9327-6b52a0ebc8ce)
-![image](https://github.com/user-attachments/assets/a31724b9-d271-4f77-883b-11e7d0aa1791)
+<img width="400" height="960" alt="image" src="https://github.com/user-attachments/assets/d9ed9ad6-6c33-4d9d-9b24-3ce8b2f4fda6" />
+<img width="400" height="960" alt="image" src="https://github.com/user-attachments/assets/6e6c9df3-5ae6-4979-a995-f42d6257c5f4" />
+<img width="400" height="960" alt="image" src="https://github.com/user-attachments/assets/8af0270f-5fbc-4b59-a38e-34280a00f65e" />
+<img width="400" height="960" alt="image" src="https://github.com/user-attachments/assets/00dde7d1-7dd9-47fe-83e5-00b4fd3523f0" />
+
+
