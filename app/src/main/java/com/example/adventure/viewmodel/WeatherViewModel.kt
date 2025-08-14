@@ -11,6 +11,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.example.adventure.data.local.model.Bookmark
 import com.example.adventure.data.network.model.WeatherConditionResponse
 import com.example.adventure.data.repository.LocationRepository
 import com.example.adventure.ui.state.LocationSelectionState
@@ -74,6 +75,39 @@ class MainViewModel @Inject constructor(
 
     init {
         fetchStateList()
+        observeBookmarks()
+    }
+
+    private fun observeBookmarks() {
+        viewModelScope.launch {
+            locationRepository.getBookmarks().collect { bookmarks ->
+                updateLocationState { it.copy(bookmarks = bookmarks) }
+            }
+        }
+    }
+
+    fun addBookmark() {
+        viewModelScope.launch {
+            val state = _uiState.value.locationState.selectedState ?: return@launch
+            val city = _uiState.value.locationState.selectedCity ?: return@launch
+            val bookmark = Bookmark(
+                stateName = state.name,
+                stateAbbreviation = state.abbreviation,
+                cityName = city
+            )
+            locationRepository.addBookmark(bookmark)
+        }
+    }
+
+    fun removeBookmark(bookmark: Bookmark) {
+        viewModelScope.launch {
+            locationRepository.removeBookmark(bookmark)
+        }
+    }
+
+    fun loadBookmark(bookmark: Bookmark) {
+        setDropdownSelection(STATE, bookmark.stateName)
+        setDropdownSelection(CITY, bookmark.cityName)
     }
 
     private fun searchStateList(query: TextFieldValue) {

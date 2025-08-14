@@ -1,6 +1,7 @@
 package com.example.adventure.ui.state
 
 import androidx.compose.ui.text.input.TextFieldValue
+import com.example.adventure.data.local.model.Bookmark
 import com.example.adventure.data.model.State
 import com.example.adventure.viewmodel.UnitType
 import com.example.adventure.viewmodel.WeatherDisplayData
@@ -21,7 +22,8 @@ data class LocationSelectionState(
     val availableCities: List<String>? = emptyList(),
     val selectedCity: String? = null,
     val citySearchQuery: TextFieldValue = TextFieldValue(""),
-    val filteredCities: List<String> = emptyList()
+    val filteredCities: List<String> = emptyList(),
+    val bookmarks: List<Bookmark> = emptyList()
 )
 
 data class WeatherDataState(
