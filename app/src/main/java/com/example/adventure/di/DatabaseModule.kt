@@ -1,7 +1,6 @@
 package com.example.adventure.di
 
 import android.content.Context
-import androidx.room.Room
 import com.example.adventure.data.local.AppDatabase
 import dagger.Module
 import dagger.Provides
@@ -17,11 +16,7 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
-        return Room.databaseBuilder(
-            context.applicationContext,
-            AppDatabase::class.java,
-            "app_database"
-        ).build()
+        return AppDatabase.getDatabase(context)
     }
 
     @Provides

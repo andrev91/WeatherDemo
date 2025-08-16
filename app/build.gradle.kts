@@ -97,7 +97,8 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation(libs.androidx.ui.test.manifest)
     debugImplementation(libs.ui.tooling)
-    implementation("androidx.compose.material3:material3")
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.material.icons.extended)
 
     // Serialization libraries
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
