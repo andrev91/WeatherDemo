@@ -9,7 +9,8 @@ import com.example.adventure.viewmodel.WeatherDisplayData
 data class WeatherUiState(
     val locationState : LocationSelectionState = LocationSelectionState(),
     val weatherState : WeatherDataState = WeatherDataState(),
-    val error: String? = null
+    val error: String? = null,
+    val bookmarkState: BookmarkState? = null
 )
 
 data class LocationSelectionState(

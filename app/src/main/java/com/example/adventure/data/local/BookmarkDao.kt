@@ -18,4 +18,7 @@ interface BookmarkDao {
 
     @Query("SELECT * FROM bookmarks ORDER BY stateName, cityName ASC")
     fun getAllBookmarks(): Flow<List<Bookmark>>
+
+    @Query("SELECT * FROM bookmarks WHERE stateName = :stateName AND cityName = :cityName")
+    suspend fun getBookmarkByStateAndCity(stateName: String, cityName: String): Bookmark?
 }

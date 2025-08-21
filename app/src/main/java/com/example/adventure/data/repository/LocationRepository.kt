@@ -33,6 +33,10 @@ class LocationRepository @Inject constructor(
         bookmarkDao.delete(bookmark)
     }
 
+    suspend fun isBookmarkDuplicate(state: String, city: String): Boolean {
+        return bookmarkDao.getBookmarkByStateAndCity(state, city) != null
+    }
+
     fun getLocationByKey(key: String) = locationDao.getLocationByKey(key)
     fun getOrFetchLocation(name: String) : Flow<Result<Location>> = flow {
         val cachedLocationKey = locationDao.getLocationBySearchString(name).firstOrNull()

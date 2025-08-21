@@ -33,8 +33,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,8 +70,6 @@ const val TAG_LOCATION_DROPDOWN = "LocationDropdown"
 
 const val TAG_CITY_DROPDOWN = "CityDropdown"
 const val TAG_LOCATION_DROPDOWN_OUTLINE = "LocationDropdownOutline"
-
-const val TAG_CITY_DROPDOWN_OUTLINE = "CityDropdownOutline"
 const val TAG_WEATHER_DESC = "WeatherDescriptionText"
 const val TAG_WEATHER_TEMP = "WeatherTemperatureText"
 const val TAG_ERROR_TEXT = "ErrorText"
@@ -79,9 +80,17 @@ const val TAG_REFRESH_BUTTON = "RefreshButton"
 @Composable
 fun WeatherScreen(viewModel: MainViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.bookmarkStateChannel.collect { state ->
+            snackbarHostState.showSnackbar(state.message, duration = SnackbarDuration.Short)
+        }
+    }
 
     WeatherScaffold(
         uiState = uiState,
+        snackBarHostState = snackbarHostState,
         onRemoveBookmark = { viewModel.removeBookmark(it) },
         onLoadBookmark = { viewModel.loadBookmark(it) }
     ) { paddingValues ->
