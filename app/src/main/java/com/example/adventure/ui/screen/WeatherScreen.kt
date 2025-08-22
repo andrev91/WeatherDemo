@@ -1,6 +1,7 @@
 package com.example.adventure.ui.screen
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,8 +33,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,7 +54,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.adventure.R
+import com.example.adventure.data.local.model.Bookmark
 import com.example.adventure.data.model.State
+import com.example.adventure.ui.scaffold.WeatherScaffold
 import com.example.adventure.ui.state.LocationSelectionState
 import com.example.adventure.ui.state.LocationType
 import com.example.adventure.ui.state.WeatherDataState
@@ -64,8 +70,6 @@ const val TAG_LOCATION_DROPDOWN = "LocationDropdown"
 
 const val TAG_CITY_DROPDOWN = "CityDropdown"
 const val TAG_LOCATION_DROPDOWN_OUTLINE = "LocationDropdownOutline"
-
-const val TAG_CITY_DROPDOWN_OUTLINE = "CityDropdownOutline"
 const val TAG_WEATHER_DESC = "WeatherDescriptionText"
 const val TAG_WEATHER_TEMP = "WeatherTemperatureText"
 const val TAG_ERROR_TEXT = "ErrorText"
@@ -76,14 +80,30 @@ const val TAG_REFRESH_BUTTON = "RefreshButton"
 @Composable
 fun WeatherScreen(viewModel: MainViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    WeatherScreenContent(uiState = uiState,
-        onDropdownSearch = { locationType, search -> viewModel.searchDropdownList(locationType, search) },
-        onDropdownClear = { viewModel.clearDropdownSelection(it) },
-        onDropdownSelected = { locationType, location -> viewModel.setDropdownSelection(locationType, location) },
-        onRefreshClicked = { viewModel.searchLocation() },
-        onUnitSelected = { viewModel.triggerTempTypeChange(it) }
-    )
+    LaunchedEffect(Unit) {
+        viewModel.bookmarkStateChannel.collect { state ->
+            snackbarHostState.showSnackbar(state.message, duration = SnackbarDuration.Short)
+        }
+    }
+
+    WeatherScaffold(
+        uiState = uiState,
+        snackBarHostState = snackbarHostState,
+        onRemoveBookmark = { viewModel.removeBookmark(it) },
+        onLoadBookmark = { viewModel.loadBookmark(it) }
+    ) { paddingValues ->
+        WeatherScreenContent(
+            uiState = uiState,
+            onDropdownSearch = { locationType, search -> viewModel.searchDropdownList(locationType, search) },
+            onDropdownClear = { viewModel.clearDropdownSelection(it) },
+            onDropdownSelected = { locationType, location -> viewModel.setDropdownSelection(locationType, location) },
+            onRefreshClicked = { viewModel.searchLocation() },
+            onUnitSelected = { viewModel.triggerTempTypeChange(it) },
+            onAddBookmark = { viewModel.addBookmark() }
+        )
+    }
 }
 
 @Composable
@@ -92,7 +112,8 @@ fun WeatherScreenContent(uiState: WeatherUiState,
                          onDropdownClear : (LocationType) -> Unit,
                          onDropdownSelected : (LocationType, String) -> Unit,
                          onRefreshClicked: () -> Unit,
-                         onUnitSelected : (UnitType) -> Unit) {
+                         onUnitSelected : (UnitType) -> Unit,
+                         onAddBookmark: () -> Unit) {
     val scrollState = rememberScrollState()
     Column(modifier = Modifier
         .fillMaxSize()
@@ -143,12 +164,49 @@ fun WeatherScreenContent(uiState: WeatherUiState,
             WeatherDetails(data = uiState.weatherState.displayData, unit = uiState.weatherState.temperatureUnit)
             Spacer(modifier = Modifier.height(8.dp))
         }
-        Button(onClick = onRefreshClicked, modifier = Modifier.testTag(TAG_REFRESH_BUTTON)
-            , elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)) {
-            Text(text = if (uiState.weatherState.displayData != null) "Refresh Weather Data" else "Fetch Weather Data")
+        Row {
+            Button(onClick = onRefreshClicked, modifier = Modifier.testTag(TAG_REFRESH_BUTTON)
+                , elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)) {
+                Text(text = if (uiState.weatherState.displayData != null) "Refresh Weather Data" else "Fetch Weather Data")
+            }
+            if (uiState.locationState.selectedState != null && uiState.locationState.selectedCity != null) {
+                Spacer(modifier = Modifier.weight(0.1f))
+                Button(onClick = onAddBookmark, elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)) {
+                    Text("Bookmark")
+                }
+            }
         }
         Spacer(modifier = Modifier.height(24.dp))
         RadioButtonSelection(selectedUnit = uiState.weatherState.temperatureUnit, onOptionSelected = onUnitSelected)
+    }
+}
+
+@Composable
+fun BookmarksList(
+    bookmarks: List<Bookmark>,
+    onBookmarkClick: (Bookmark) -> Unit,
+    onDeleteClick: (Bookmark) -> Unit
+) {
+    Card(elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Bookmarked Locations", style = MaterialTheme.typography.titleLarge)
+            Spacer(modifier = Modifier.height(8.dp))
+            bookmarks.forEach { bookmark ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onBookmarkClick(bookmark) }
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("${bookmark.cityName}, ${bookmark.stateAbbreviation}")
+                    IconButton(onClick = { onDeleteClick(bookmark) }) {
+                        Icon(Icons.Filled.Clear, contentDescription = "Delete bookmark")
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -294,7 +352,8 @@ fun PreviewWeatherScreenContent_Loading() {
             WeatherDataState(isLoadingWeather = true)),
             onDropdownSelected = { _, _ -> },
             onDropdownSearch = { _, _ -> },
-            onRefreshClicked = {}, onUnitSelected = {}, onDropdownClear = {})
+            onRefreshClicked = {}, onUnitSelected = {}, onDropdownClear = {},
+            onAddBookmark = {})
     }
 }
 
@@ -317,7 +376,8 @@ fun PreviewWeatherScreenContent_Success() {
             ),
             onDropdownSelected = { _, _ -> },
             onDropdownSearch = { _, _ -> },
-            onRefreshClicked = {},onUnitSelected = {}, onDropdownClear = {}
+            onRefreshClicked = {},onUnitSelected = {}, onDropdownClear = {},
+            onAddBookmark = {}
         )
     }
 }
@@ -333,7 +393,8 @@ fun PreviewWeatherScreenContent_Error() {
                 error = "Network Error"),
             onDropdownSelected = { _, _ -> },
             onDropdownSearch = { _, _ -> },
-            onRefreshClicked = {}, onUnitSelected = {}, onDropdownClear = {}
+            onRefreshClicked = {}, onUnitSelected = {}, onDropdownClear = {},
+            onAddBookmark = {}
         )
     }
 }

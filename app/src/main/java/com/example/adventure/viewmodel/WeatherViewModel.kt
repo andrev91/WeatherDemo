@@ -11,8 +11,10 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.example.adventure.data.local.model.Bookmark
 import com.example.adventure.data.network.model.WeatherConditionResponse
 import com.example.adventure.data.repository.LocationRepository
+import com.example.adventure.ui.state.BookmarkState
 import com.example.adventure.ui.state.LocationSelectionState
 import com.example.adventure.ui.state.LocationType
 import com.example.adventure.ui.state.LocationType.*
@@ -21,6 +23,8 @@ import com.example.adventure.ui.state.WeatherUiState
 import com.example.adventure.util.WeatherIconMapper
 import com.example.adventure.worker.WeatherWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,8 +32,10 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.util.UUID
 import javax.inject.Inject
@@ -52,11 +58,6 @@ enum class UnitType {
     }
 }
 
-//sealed class testChannel {
-//    data class Error(val errorMessage: String) : testChannel()
-//    data class Success(val successMessage: String) : testChannel()
-//}
-
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val workManager: WorkManager,
@@ -66,14 +67,58 @@ class MainViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(WeatherUiState())
     val uiState: StateFlow<WeatherUiState> = _uiState.asStateFlow()
 
+    private val _bookmarkStateChannel = Channel<BookmarkState>()
+    val bookmarkStateChannel = _bookmarkStateChannel.receiveAsFlow()
+
     private var weatherWorkerUId: UUID? = null
-    private var locationWorkerUID: UUID? = null
-    private var locationListWorkerUID: UUID? = null
 
     private val locationKey = "225007" //default location
 
     init {
         fetchStateList()
+        observeBookmarks()
+    }
+
+    private fun observeBookmarks() {
+        viewModelScope.launch {
+            locationRepository.getBookmarks().collect { bookmarks ->
+                updateLocationState { it.copy(bookmarks = bookmarks) }
+            }
+        }
+    }
+
+    fun addBookmark() {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val state = _uiState.value.locationState.selectedState ?: return@withContext
+                val city = _uiState.value.locationState.selectedCity ?: return@withContext
+
+                if (locationRepository.isBookmarkDuplicate(state.name, city)) {
+                    _bookmarkStateChannel.send(BookmarkState.onError("Cannot save duplicate Bookmark!"))
+                    return@withContext
+                }
+
+                val bookmark = Bookmark(
+                    stateName = state.name,
+                    stateAbbreviation = state.abbreviation,
+                    cityName = city
+                )
+                locationRepository.addBookmark(bookmark)
+                _bookmarkStateChannel.send(BookmarkState.onSuccess("Bookmark successfully added!"))
+            }
+        }
+    }
+
+    fun removeBookmark(bookmark: Bookmark) {
+        viewModelScope.launch {
+            locationRepository.removeBookmark(bookmark)
+            _bookmarkStateChannel.send(BookmarkState.onDelete("Bookmark removed."))
+        }
+    }
+
+    fun loadBookmark(bookmark: Bookmark) {
+        setDropdownSelection(STATE, bookmark.stateName)
+        setDropdownSelection(CITY, bookmark.cityName)
     }
 
     private fun searchStateList(query: TextFieldValue) {
@@ -183,14 +228,16 @@ class MainViewModel @Inject constructor(
         val city = uiState.value.locationState.selectedCity ?: ""
 
         viewModelScope.launch {
-            locationRepository.getOrFetchLocation("$state,$city")
-                .collect { result ->
-                    result.onSuccess { location ->
-                        fetchWeather(location.locationKey)
-                    }.onFailure { error ->
-                        _uiState.update { it.copy(error = error.message) }
+            withContext(Dispatchers.Main) {
+                locationRepository.getOrFetchLocation("$state,$city")
+                    .collect { result ->
+                        result.onSuccess { location ->
+                            fetchWeather(location.locationKey)
+                        }.onFailure { error ->
+                            _uiState.update { it.copy(error = error.message) }
+                        }
                     }
-                }
+            }
         }
     }
 

@@ -2,7 +2,9 @@ package com.example.adventure.data.repository
 
 import android.content.Context
 import android.util.Log
+import com.example.adventure.data.local.BookmarkDao
 import com.example.adventure.data.local.LocationDao
+import com.example.adventure.data.local.model.Bookmark
 import com.example.adventure.data.local.model.Location
 import com.example.adventure.data.model.State
 import com.example.adventure.data.model.StateCities
@@ -17,8 +19,23 @@ import javax.inject.Inject
 class LocationRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val locationDao: LocationDao,
+    private val bookmarkDao: BookmarkDao,
     private val locationRemoteDataSource: LocationRemoteDataSource
 ) {
+
+    fun getBookmarks(): Flow<List<Bookmark>> = bookmarkDao.getAllBookmarks()
+
+    suspend fun addBookmark(bookmark: Bookmark) {
+        bookmarkDao.insert(bookmark)
+    }
+
+    suspend fun removeBookmark(bookmark: Bookmark) {
+        bookmarkDao.delete(bookmark)
+    }
+
+    suspend fun isBookmarkDuplicate(state: String, city: String): Boolean {
+        return bookmarkDao.getBookmarkByStateAndCity(state, city) != null
+    }
 
     fun getLocationByKey(key: String) = locationDao.getLocationByKey(key)
     fun getOrFetchLocation(name: String) : Flow<Result<Location>> = flow {
