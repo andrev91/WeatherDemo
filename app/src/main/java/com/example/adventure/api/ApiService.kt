@@ -1,37 +1,25 @@
 package com.example.adventure.api
 
-import com.example.adventure.data.network.model.WeatherConditionResponse
-import com.example.adventure.data.network.model.WeatherLocationResponse
+import com.example.adventure.data.network.model.GeocodingResponse
+import com.example.adventure.data.network.model.OpenWeatherResponseDto
 import retrofit2.Response
 import retrofit2.http.GET
-import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ApiService {
 
-    @GET("currentconditions/v1/{locationKey}")
+    @GET("weather")
     suspend fun getWeather(
-        @Path("locationKey") locationKey: String,
-        @Query("apikey") apiKey: String,
-        @Query("details") details: Boolean = true
-    ) : Response<List<WeatherConditionResponse>>
+        @Query("lat") lat: Double,
+        @Query("lon") lon: Double,
+        @Query("appid") apiKey: String,
+        @Query("units") units: String = "imperial"
+    ): Response<OpenWeatherResponseDto>
 
-    @GET("locations/v1/{locationKey}")
-    suspend fun getLocation(
-        @Path("locationKey") locationKey: String,
-        @Query("apikey") apiKey: String
-    ) : Response<WeatherLocationResponse>
-
-    @GET("locations/v1/adminareas/{countryCode}")
-    suspend fun getUnitedStatesLocations(
-        @Path("countryCode") countryCode: String = "US",
-        @Query("apikey") apiKey: String
-    ) : Response<List<WeatherLocationResponse>>
-
-    @GET("locations/v1/search")
+    @GET("geo/1.0/direct")
     suspend fun searchLocation(
-        @Query("q") query: String = "",
-        @Query("apikey") apiKey: String
-    ) : Response<List<WeatherLocationResponse>>
-
+        @Query("q") query: String,
+        @Query("limit") limit: Int = 5,
+        @Query("appid") apiKey: String
+    ): Response<List<GeocodingResponse>>
 }

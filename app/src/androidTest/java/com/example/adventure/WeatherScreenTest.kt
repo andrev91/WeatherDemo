@@ -11,7 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.example.adventure.activity.MainActivity
+import com.example.adventure.activity.WeatherActivity
 import com.example.adventure.ui.screen.*
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -28,11 +28,11 @@ class WeatherScreenTest {
     var hiltRule = HiltAndroidRule(this)
 
     @get:Rule(order = 1)
-    val composeTestRule = createAndroidComposeRule<MainActivity>()
+    val composeTestRule = createAndroidComposeRule<WeatherActivity>()
 
     @Before
     fun setup() {
-        hiltRule.inject() // Important for Hilt to inject fields in the test class if any
+        hiltRule.inject()
     }
 
     private fun waitForLoad(milliseconds : Long = 15000L) {
@@ -79,16 +79,18 @@ class WeatherScreenTest {
         composeTestRule.onNodeWithTag(TAG_LOCATION_DROPDOWN).performClick()
         composeTestRule.waitUntil { composeTestRule.onAllNodesWithTag(TAG_LOCATION_DROPDOWN, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
         composeTestRule.onNodeWithText("New York", useUnmergedTree = true).performScrollTo().performClick()
+        composeTestRule.onNodeWithTag(TAG_CITY_DROPDOWN).performClick()
+        composeTestRule.waitUntil { composeTestRule.onAllNodesWithTag(TAG_CITY_DROPDOWN, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        composeTestRule.onNodeWithText("New York", useUnmergedTree = true).performScrollTo().performClick()
         composeTestRule.onNodeWithTag(TAG_REFRESH_BUTTON).performClick()
 
         waitForLoad()
 
         try {
-            composeTestRule.onNodeWithTag(TAG_LOCATION_DESC, useUnmergedTree = true)
+            composeTestRule.onNodeWithTag(TAG_WEATHER_DESC, useUnmergedTree = true)
                 .assertIsDisplayed()
-                .assertTextContains("New York", substring = true, ignoreCase = true)
         } catch (e : AssertionError) {
-            throw AssertionError("Location description not found and/or New York is not in the text.", e)
+            throw AssertionError("Weather description not found.", e)
         }
 
         try {

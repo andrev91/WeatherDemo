@@ -62,7 +62,7 @@ import com.example.adventure.ui.state.LocationType
 import com.example.adventure.ui.state.WeatherDataState
 import com.example.adventure.ui.state.WeatherUiState
 import com.example.adventure.ui.theme.AdventureTheme
-import com.example.adventure.viewmodel.MainViewModel
+import com.example.adventure.viewmodel.WeatherViewModel
 import com.example.adventure.viewmodel.UnitType
 import com.example.adventure.viewmodel.WeatherDisplayData
 
@@ -78,7 +78,7 @@ const val TAG_LOCATION_DESC = "LocationDescriptionText"
 const val TAG_REFRESH_BUTTON = "RefreshButton"
 
 @Composable
-fun WeatherScreen(viewModel: MainViewModel = hiltViewModel()) {
+fun WeatherScreen(viewModel: WeatherViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -121,7 +121,7 @@ fun WeatherScreenContent(uiState: WeatherUiState,
         .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center) {
-        Text("Accuweather Data", style = MaterialTheme.typography.headlineMedium)
+        Text("OpenWeather Data", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
 
         SearchableDropDown(

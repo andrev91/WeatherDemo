@@ -10,7 +10,7 @@ import androidx.work.workDataOf
 import app.cash.turbine.test
 import com.example.adventure.data.network.model.WeatherLocationResponse
 import com.example.adventure.data.repository.LocationRepository
-import com.example.adventure.viewmodel.MainViewModel
+import com.example.adventure.viewmodel.WeatherViewModel
 import com.example.adventure.worker.USLocationWorker.Companion.LOCATION_JSON
 import com.example.adventure.worker.USLocationWorker.Companion.OUTPUT_SUCCESS
 import junit.framework.TestCase.assertFalse
@@ -56,7 +56,7 @@ class WeatherTest {
     private lateinit var mockLocationRepository : LocationRepository
 
     @Mock
-    private lateinit var viewModel : MainViewModel
+    private lateinit var viewModel : WeatherViewModel
 
     @Before
     fun setup() {
@@ -80,9 +80,8 @@ class WeatherTest {
         mockWorkInfo = MutableStateFlow(succeededWorkInfo)
 
         whenever(mockWorkManager.getWorkInfoByIdFlow(any())).thenReturn(mockWorkInfo)
-//        whenever(mockWorkManager.enqueueUniqueWork(any<String>(), any<ExistingWorkPolicy>(), any<OneTimeWorkRequest>())).thenReturn(mock())
 
-        viewModel = MainViewModel(mockWorkManager, mockLocationRepository)
+        viewModel = WeatherViewModel(mockWorkManager, mockLocationRepository)
         generatedWorkerUID = workRequestCaptor.firstValue.id
     }
 
@@ -110,27 +109,23 @@ class WeatherTest {
         }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @Test
-    fun `init view model finished loading location list`() = runTest {
-        viewModel.uiState.test {
-            awaitItem()
-            val data1 = WeatherLocationResponse(key = null, englishName = "New York", localizedName = "New York",
-                region = null, administrativeArea = null, country = null)
-            val test = Json.encodeToString(listOf(data1))
-            val succeededWorkInfo = WorkInfo(
-                generatedWorkerUID,
-                WorkInfo.State.SUCCEEDED,
-                emptySet(),
-                outputData = workDataOf(LOCATION_JSON to test, OUTPUT_SUCCESS to true)
-            ) //Data {locationsJson : [{"LocalizedName":"New York","EnglishName":"New York"}], SUCCESS : true}
-            mockWorkInfo.value = succeededWorkInfo // Update the MutableStateFlow's value
-            // THEN: The ViewModel's exposed states should now reflect SUCCEEDED
-            val successState = awaitItem()
-            assertFalse("Work should be fully loaded", successState.locationState.isLoadingStates)
-             assertTrue("Work should not be running after succeeding", successState.locationState.availableStates!!.isNotEmpty())
-            cancelAndConsumeRemainingEvents()
-        }
-    }
 
+    @Test
+    fun `searchLocation success fetchesWeather`() = runTest {
+        val mockLocation = com.example.adventure.data.local.model.Location(name = "New York", latitude = 40.7128, longitude = -74.0060)
+        whenever(mockLocationRepository.getOrFetchLocation(any())).thenReturn(MutableStateFlow(Result.success(mockLocation)))
+
+        viewModel.searchLocation()
+
+        val weatherRequestCaptor = argumentCaptor<OneTimeWorkRequest>()
+        Mockito.verify(mockWorkManager).enqueueUniqueWork(
+            any<String>(),
+            any<ExistingWorkPolicy>(),
+            weatherRequestCaptor.capture()
+        )
+
+        val weatherWorkRequest = weatherRequestCaptor.firstValue
+        assertTrue(weatherWorkRequest.workSpec.input.getDouble(com.example.adventure.worker.WeatherWorker.WEATHER_LAT_KEY, 0.0) == 40.7128)
+        assertTrue(weatherWorkRequest.workSpec.input.getDouble(com.example.adventure.worker.WeatherWorker.WEATHER_LON_KEY, 0.0) == -74.0060)
+    }
 }

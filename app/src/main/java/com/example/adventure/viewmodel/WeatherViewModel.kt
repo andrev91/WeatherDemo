@@ -12,7 +12,7 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.example.adventure.data.local.model.Bookmark
-import com.example.adventure.data.network.model.WeatherConditionResponse
+import com.example.adventure.data.network.model.OpenWeatherResponseDto
 import com.example.adventure.data.repository.LocationRepository
 import com.example.adventure.ui.state.BookmarkState
 import com.example.adventure.ui.state.LocationSelectionState
@@ -59,7 +59,7 @@ enum class UnitType {
 }
 
 @HiltViewModel
-class MainViewModel @Inject constructor(
+class WeatherViewModel @Inject constructor(
     private val workManager: WorkManager,
     private val locationRepository: LocationRepository
     ) : ViewModel() {
@@ -71,8 +71,6 @@ class MainViewModel @Inject constructor(
     val bookmarkStateChannel = _bookmarkStateChannel.receiveAsFlow()
 
     private var weatherWorkerUId: UUID? = null
-
-    private val locationKey = "225007" //default location
 
     init {
         fetchStateList()
@@ -204,20 +202,24 @@ class MainViewModel @Inject constructor(
         currentState.copy(citySearchQuery = query, filteredCities = filteredCities!!) }
     }
 
-    private fun fetchWeather(locationKey: String = "") {
+    private fun fetchWeather(lat: Double, lon: Double) {
         updateWeatherState { currentState -> currentState.copy(displayData = null) }
         _uiState.update { it.copy(error = null) }
         val weatherRequest = OneTimeWorkRequestBuilder<WeatherWorker>()
             .setInputData(
-                workDataOf(WeatherWorker.WEATHER_KEY to locationKey.ifEmpty { this.locationKey })
+                workDataOf(
+                    WeatherWorker.WEATHER_LAT_KEY to lat,
+                    WeatherWorker.WEATHER_LON_KEY to lon
+                )
             ).setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .build()
         weatherWorkerUId = weatherRequest.id
         observerWeatherWork(weatherWorkerUId!!)
         workManager.enqueueUniqueWork(
-            "WeatherLocation_$locationKey",
+            "WeatherLocation_$lat,$lon",
             ExistingWorkPolicy.REPLACE,
-            weatherRequest)
+            weatherRequest
+        )
     }
 
     fun searchLocation() {
@@ -229,10 +231,10 @@ class MainViewModel @Inject constructor(
 
         viewModelScope.launch {
             withContext(Dispatchers.Main) {
-                locationRepository.getOrFetchLocation("$state,$city")
+                locationRepository.getOrFetchLocation("$city, $state")
                     .collect { result ->
                         result.onSuccess { location ->
-                            fetchWeather(location.locationKey)
+                            fetchWeather(location.latitude, location.longitude)
                         }.onFailure { error ->
                             _uiState.update { it.copy(error = error.message) }
                         }
@@ -275,16 +277,17 @@ class MainViewModel @Inject constructor(
                     val weatherJson = outputData.getString(WeatherWorker.WEATHER_JSON)
                     if (weatherJson != null) {
                         try {
-                            // --- Parse JSON from Worker Output ---
-                            val response = Json.decodeFromString<WeatherConditionResponse>(weatherJson)
+                            val response = Json.decodeFromString<OpenWeatherResponseDto>(weatherJson)
                             updateWeatherState { currentState ->
-                                currentState.copy(displayData = mapResponseToDisplayData(response),
-                                    isLoadingWeather = false)
+                                currentState.copy(
+                                    displayData = mapResponseToDisplayData(response),
+                                    isLoadingWeather = false
+                                )
                             }
                             _uiState.update { it.copy(error = null) }
-                            Log.d(TAG,"Successfully parsed weather data from worker.")
+                            Log.d(TAG, "Successfully parsed weather data from worker.")
                         } catch (e: Exception) {
-                            Log.e(TAG,"Error parsing JSON from worker output",e)
+                            Log.e(TAG, "Error parsing JSON from worker output", e)
                             updateWeatherState { currentState -> currentState.copy(isLoadingWeather = false) }
                             _uiState.update { it.copy(error = "Failed to parse weather data.") }
                         }
@@ -294,17 +297,13 @@ class MainViewModel @Inject constructor(
                         _uiState.update { it.copy(error = "Received empty success response.") }
                     }
                 } else {
-                    // Worker finished but reported internal failure
                     val errorMsg = outputData.getString(WeatherWorker.OUTPUT_ERROR_MESSAGE)
                         ?: "Worker reported failure."
-                    Log.e(
-                        TAG,
-                        "Work succeeded but internal flag was false: $errorMsg"
-                    )
+                    Log.e(TAG, "Work succeeded but internal flag was false: $errorMsg")
                     updateWeatherState { currentState -> currentState.copy(isLoadingWeather = false) }
                     _uiState.update { it.copy(error = errorMsg) }
                 }
-                weatherWorkerUId = null // Reset tracked ID once finished
+                weatherWorkerUId = null
             }
 
             WorkInfo.State.FAILED -> {
@@ -327,8 +326,7 @@ class MainViewModel @Inject constructor(
 
             WorkInfo.State.RUNNING, WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED -> {
                 Log.d(TAG, "Work is ${workInfo.state}.")
-                // Ensure loading is true if work is active
-                if (!_uiState.value.weatherState.isLoadingWeather) { // Avoid unnecessary updates
+                if (!_uiState.value.weatherState.isLoadingWeather) {
                     updateWeatherState { currentState -> currentState.copy(isLoadingWeather = true) }
                     _uiState.update { it.copy(error = null) }
                 }
@@ -336,15 +334,14 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    // Helper function to map the API response (remains the same logic)
-    private fun mapResponseToDisplayData(response: WeatherConditionResponse): WeatherDisplayData {
-        val formattedTempFahrenheit = "${response.temperature?.imperial?.value ?: "--"}°${response.temperature?.imperial?.unit ?: ""}"
-        val formattedTempCelsius = "${response.temperature?.metric?.value ?: "--"}°${response.temperature?.metric?.unit ?: ""}"
-        val observedTime = response.localObservationDateTime?.substringAfter("T")?.substringBefore("+")?.substringBefore("-") ?: "N/A"
+    private fun mapResponseToDisplayData(response: OpenWeatherResponseDto): WeatherDisplayData {
+        val formattedTempFahrenheit = "${response.main.temp}°F"
+        val formattedTempCelsius = String.format("%.2f°C", (response.main.temp - 32) * 5 / 9)
+        val observedTime = "N/A" // OpenWeather does not provide local observation time
 
         return WeatherDisplayData(
-            weatherDescription = response.weatherText ?: "No description",
-            weatherIcon = WeatherIconMapper.getIconResource(response.weatherIcon ?: 0, response.isDayTime ?: true),
+            weatherDescription = response.weather.firstOrNull()?.description ?: "No description",
+            weatherIcon = WeatherIconMapper.getIconResource(response.weather.firstOrNull()?.id ?: 0, true), // isDayTime is not available
             temperatureFahrenheit = formattedTempFahrenheit,
             temperatureCelsius = formattedTempCelsius,
             observedAt = observedTime
