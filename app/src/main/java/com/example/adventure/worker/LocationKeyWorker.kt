@@ -27,7 +27,7 @@ class LocationKeyWorker @AssistedInject constructor(@Assisted context: Context, 
 
         try {
             Log.d(TAG, "Fetching location data for key: $inputData")
-            val request = apiService.getLocation(inputData, apiKey)
+            val request = apiService.getLocation(query = inputData, apiKey = apiKey)
             if (request.isSuccessful) {
                 val body = request.body()
                 if (body != null) {

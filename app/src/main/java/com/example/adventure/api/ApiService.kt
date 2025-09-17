@@ -17,9 +17,10 @@ interface ApiService {
     ): Response<OpenWeatherResponseDto>
 
     @GET("geo/1.0/direct")
-    suspend fun searchLocation(
+    suspend fun getLocation(
         @Query("q") query: String,
-        @Query("limit") limit: Int = 5,
+        @Query("limit") limit: Int = 1,
         @Query("appid") apiKey: String
     ): Response<List<GeocodingResponse>>
+
 }

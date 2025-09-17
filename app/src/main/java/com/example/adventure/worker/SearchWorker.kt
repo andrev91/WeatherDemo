@@ -29,7 +29,7 @@ class SearchWorker @AssistedInject constructor(
                 workDataOf(OUTPUT_SUCCESS to false, OUTPUT_ERROR_MESSAGE to "No input data provided")
             )
 
-            val response = apiService.searchLocation(searchQuery, 5, apiKey)
+            val response = apiService.getLocation(searchQuery, 5, apiKey)
             if (response.isSuccessful) {
                 val locations = response.body()
                 if (!locations.isNullOrEmpty()) {
