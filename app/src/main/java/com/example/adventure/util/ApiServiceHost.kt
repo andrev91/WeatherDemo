@@ -6,7 +6,7 @@ enum class ApiServiceHost(
     var isActive: Boolean = false) {
     ACCUWEATHER("https://dataservice.accuweather.com/",
         "ACCUWEATHER_API_KEY"),
-    OPEN_WEATHER_MAP("https://api.openweathermap.org/data/2.5/weather?",
+    OPEN_WEATHER_MAP("https://api.openweathermap.org/",
         "OPEN_WEATHER_API_KEY");
 
 
