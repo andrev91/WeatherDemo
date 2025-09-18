@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.adventure.data.local.model.Bookmark
 import com.example.adventure.data.local.model.Location
 
-@Database(entities = [Location::class, Bookmark::class], version = 2, exportSchema = false)
+@Database(entities = [Location::class, Bookmark::class], version = 3, exportSchema = true)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun locationDao(): LocationDao
@@ -26,7 +26,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "app_database"
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
                 INSTANCE = instance
                 instance
@@ -38,6 +38,25 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL(
                     "CREATE TABLE IF NOT EXISTS `bookmarks` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `stateName` TEXT NOT NULL, `stateAbbreviation` TEXT NOT NULL, `cityName` TEXT NOT NULL)"
                 )
+            }
+        }
+
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS `Location_new` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `name` TEXT NOT NULL)")
+
+                // Copy data from the old table to the new table, excluding the removed column (locationKey)
+                db.execSQL(
+                    "INSERT INTO `Location_new` (`name`, `latitude`, `longitude`) " +
+                            "SELECT `name`, `latitude`, `longitude` " +
+                            "FROM `location`"
+                )
+
+                // Drop the old table
+                db.execSQL("DROP TABLE `Location`")
+
+                // Rename the new table to the original table name
+                db.execSQL("ALTER TABLE `Location_new` RENAME TO `Location`")
             }
         }
     }
