@@ -3,7 +3,7 @@ package com.example.adventure.data.network.model
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class CoordDto(
+data class CoordinateDTO(
     val lon: Double,
     val lat: Double
 )

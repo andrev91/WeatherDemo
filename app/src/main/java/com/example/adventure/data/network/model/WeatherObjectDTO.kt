@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class MainDto(
+data class WeatherObjectDTO(
     val temp: Double,
     @SerialName("feels_like")
     val feelsLike: Double,

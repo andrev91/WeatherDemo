@@ -12,7 +12,7 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.example.adventure.data.local.model.Bookmark
-import com.example.adventure.data.network.model.OpenWeatherResponseDto
+import com.example.adventure.data.network.model.OpenWeatherResponseDTO
 import com.example.adventure.data.repository.LocationRepository
 import com.example.adventure.ui.state.BookmarkState
 import com.example.adventure.ui.state.LocationSelectionState
@@ -277,7 +277,7 @@ class WeatherViewModel @Inject constructor(
                     val weatherJson = outputData.getString(WeatherWorker.WEATHER_JSON)
                     if (weatherJson != null) {
                         try {
-                            val response = Json.decodeFromString<OpenWeatherResponseDto>(weatherJson)
+                            val response = Json.decodeFromString<OpenWeatherResponseDTO>(weatherJson)
                             updateWeatherState { currentState ->
                                 currentState.copy(
                                     displayData = mapResponseToDisplayData(response),
@@ -334,7 +334,7 @@ class WeatherViewModel @Inject constructor(
         }
     }
 
-    private fun mapResponseToDisplayData(response: OpenWeatherResponseDto): WeatherDisplayData {
+    private fun mapResponseToDisplayData(response: OpenWeatherResponseDTO): WeatherDisplayData {
         val formattedTempFahrenheit = "${response.main.temp}°F"
         val formattedTempCelsius = String.format("%.2f°C", (response.main.temp - 32) * 5 / 9)
         val observedTime = "N/A" // OpenWeather does not provide local observation time
