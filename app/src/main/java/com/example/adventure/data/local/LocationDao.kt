@@ -14,9 +14,6 @@ interface LocationDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertLocation(location: Location)
 
-    @Query("SELECT * FROM location WHERE locationKey = :key")
-    fun getLocationByKey(key: String) : Flow<Location?>
-
     @Query("SELECT * FROM location WHERE name = :searchString LIMIT 1")
     fun getLocationBySearchString(searchString: String) : Flow<Location?>
     @Delete

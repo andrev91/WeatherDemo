@@ -6,49 +6,42 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.example.adventure.api.ApiService
-import com.example.adventure.network.NetworkModule
+import com.example.adventure.data.model.USState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.builtins.ListSerializer
 
 @HiltWorker
-class USLocationWorker @AssistedInject constructor(@Assisted context: Context, @Assisted params: WorkerParameters,
-   private val apiService: ApiService,
-   @NetworkModule.ApiKey private val apiKey: String // Inject API key safely
-): CoroutineWorker(context, params) {
+class USLocationWorker @AssistedInject constructor(
+    @Assisted private val context: Context,
+    @Assisted params: WorkerParameters,
+) : CoroutineWorker(context, params) {
 
+    // The OpenWeatherMap API does not provide an endpoint to fetch all US locations.
+    // Therefore, this worker reads the data from a local `us_state.json` asset file.
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
-            Log.d(TAG, "Fetching location data for US States")
-            val request = apiService.getUnitedStatesLocations(apiKey = apiKey)
-            if (request.isSuccessful) {
-                val body = request.body()
-                if (body != null) {
-                    if (body.isEmpty()) {
-                        Log.w(TAG, "Fetched locations, but not able to return response.")
-                        Result.failure(workDataOf(OUTPUT_SUCCESS to false, OUTPUT_ERROR_MESSAGE to "No displayable locations found."))
-                    }
+            Log.d(TAG, "Fetching location data for US States from assets")
+            val jsonString = context.assets.open("us_state.json").bufferedReader().use { it.readText() }
+            val states = Json.decodeFromString(ListSerializer(USState.serializer()), jsonString)
 
-                    val locationsJson = Json.encodeToString(body)
-
-                    val outputData = workDataOf(
-                        OUTPUT_SUCCESS to true,
-                        LOCATION_JSON to locationsJson
-                    )
-                    Result.success(outputData)
-                } else {
-                    Result.failure(workDataOf(OUTPUT_SUCCESS to false, OUTPUT_ERROR_MESSAGE to "Empty response from server"))
-                }
+            if (states.isNotEmpty()) {
+                val locationsJson = Json.encodeToString(ListSerializer(USState.serializer()), states)
+                val outputData = workDataOf(
+                    OUTPUT_SUCCESS to true,
+                    LOCATION_JSON to locationsJson
+                )
+                Result.success(outputData)
             } else {
-                Result.failure(workDataOf(OUTPUT_SUCCESS to false, OUTPUT_ERROR_MESSAGE to "Error fetching location"))
+                Result.failure(workDataOf(OUTPUT_SUCCESS to false, OUTPUT_ERROR_MESSAGE to "No locations found in asset file."))
             }
-        } catch (e : Exception) {
+        } catch (e: Exception) {
+            Log.e(TAG, "Error reading or parsing us_state.json", e)
             Result.failure(workDataOf(OUTPUT_SUCCESS to false, OUTPUT_ERROR_MESSAGE to e.message))
         }
-
     }
 
     companion object {

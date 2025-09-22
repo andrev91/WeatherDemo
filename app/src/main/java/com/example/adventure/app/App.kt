@@ -18,7 +18,7 @@ class App : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
-        ApiServiceHost.setActive(ApiServiceHost.ACCUWEATHER)
+        ApiServiceHost.setActive(ApiServiceHost.OPEN_WEATHER_MAP)
     }
 
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {

@@ -14,14 +14,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.adventure.ui.screen.WeatherScreen
 import com.example.adventure.ui.theme.AdventureTheme
-import com.example.adventure.viewmodel.MainViewModel
+import com.example.adventure.viewmodel.WeatherViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val viewModel: MainViewModel by viewModels()
+        val viewModel: WeatherViewModel by viewModels()
         enableEdgeToEdge()
         setContent {
             AdventureTheme {

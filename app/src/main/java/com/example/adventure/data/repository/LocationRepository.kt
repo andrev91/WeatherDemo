@@ -37,17 +37,16 @@ class LocationRepository @Inject constructor(
         return bookmarkDao.getBookmarkByStateAndCity(state, city) != null
     }
 
-    fun getLocationByKey(key: String) = locationDao.getLocationByKey(key)
     fun getOrFetchLocation(name: String) : Flow<Result<Location>> = flow {
-        val cachedLocationKey = locationDao.getLocationBySearchString(name).firstOrNull()
-        if (cachedLocationKey != null) {
-            emit(Result.success(cachedLocationKey))
+        val cachedLocation = locationDao.getLocationBySearchString(name).firstOrNull()
+        if (cachedLocation != null) {
+            emit(Result.success(cachedLocation))
             return@flow
         }
 
-        locationRemoteDataSource.fetchLocationKey(name).collect { result ->
-            result.onSuccess { key ->
-                val location = Location(name = name, locationKey = key)
+        locationRemoteDataSource.fetchLocationCoordinates(name).collect { result ->
+            result.onSuccess { coordinates ->
+                val location = Location(name = name, latitude = coordinates.first, longitude = coordinates.second)
                 locationDao.insertLocation(location)
                 emit(Result.success(location))
             }.onFailure { error ->
