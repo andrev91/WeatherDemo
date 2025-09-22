@@ -1,7 +1,7 @@
-# AccuWeather Demo Android App
+# OpenWeather Demo Android App
 
 [![Kotlin Version](https://img.shields.io/badge/Kotlin-2.1.10-blue.svg)](https://kotlinlang.org)
-[![API](https://img.shields.io/badge/API-AccuWeather-orange.svg)](https://developer.accuweather.com/)
+[![API](https://img.shields.io/badge/API-OpenWeather-orange.svg)](https://openweathermap.org/api)
 ## 📖 Table of Contents
 
 * [✨ Features](#-features)
@@ -28,7 +28,7 @@
     * ViewModel - For managing UI-related data in a lifecycle-conscious way.
     * LiveData/Kotlin Flow - For observable data patterns.
 * **Networking:**
-    * Retrofit - For type-safe HTTP calls to the AccuWeather API.
+    * Retrofit - For type-safe HTTP calls to the OpenWeather API.
     * OkHttp - HTTP client.
     * Gson/Moshi - For parsing JSON responses.
 * **Asynchronous Programming:**
@@ -45,7 +45,7 @@
 
 This project aims to follow the MVVM (Model-View-ViewModel) architecture pattern.
 
-* **Model:** Represents the data layer (e.g., data classes for weather info, Repository that fetches data from the AccuWeather API).
+* **Model:** Represents the data layer (e.g., data classes for weather info, Repository that fetches data from the OpenWeather API).
 * **View:** Represents the UI layer (Activities/Fragments) that observes data from the ViewModel and displays it.
 * **ViewModel:** Acts as a bridge between the Model and the View, holding UI-related data and business logic, and surviving configuration changes.
 
@@ -68,10 +68,10 @@ This project aims to follow the MVVM (Model-View-ViewModel) architecture pattern
 
 ## 🔑 API Key Setup
 
-This project requires an API key from AccuWeather to fetch weather data.
+This project requires an API key from OpenWeather to fetch weather data.
 
 1.  **Get an API Key:**
-    * Go to the [AccuWeather Developer Portal](https://developer.accuweather.com/) and register for a free API key.
+    * Go to the [OpenWeather Developer Portal](https://openweathermap.org/api) and register for a free API key.
 2.  **Store the API Key:**
     * Create a file named `local.properties` in the root directory of the project (the same level as `gradle.properties` and `settings.gradle`).
     * **Important:** Add `local.properties` to your `.gitignore` file if it's not already there to prevent your key from being committed to Git.
@@ -82,7 +82,7 @@ This project requires an API key from AccuWeather to fetch weather data.
         ```
     * Add your API key to `local.properties` like this:
         ```properties
-        ACCUWEATHER_API_KEY="YOUR_ACTUAL_ACCUWEATHER_API_KEY"
+        OPENWEATHER_API_KEY="YOUR_ACTUAL_OPENWEATHER_API_KEY"
         ```
     The project is configured to read this key from `local.properties` via the `build.gradle` file.
 
@@ -123,6 +123,3 @@ Contributions are welcome! If you have suggestions for improvements or find any 
 <img width="400" height="960" alt="image" src="https://github.com/user-attachments/assets/6e6c9df3-5ae6-4979-a995-f42d6257c5f4" />
 <img width="400" height="960" alt="image" src="https://github.com/user-attachments/assets/8af0270f-5fbc-4b59-a38e-34280a00f65e" />
 <img width="400" height="960" alt="image" src="https://github.com/user-attachments/assets/dbc1bd23-0d12-4573-aa2d-bca44723a06e" />
-
-
-
