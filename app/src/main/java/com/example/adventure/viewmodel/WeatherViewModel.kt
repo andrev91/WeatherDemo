@@ -44,7 +44,7 @@ data class WeatherDisplayData(
     val temperatureFahrenheit : String,
     val temperatureCelsius : String,
     val weatherDescription: String,
-    val weatherIcon: Int? = null,
+    val weatherIcon: String? = null,
     val observedAt : String,
 )
 
@@ -338,10 +338,16 @@ class WeatherViewModel @Inject constructor(
         val formattedTempFahrenheit = "${response.main.temp}°F"
         val formattedTempCelsius = String.format("%.2f°C", (response.main.temp - 32) * 5 / 9)
         val observedTime = "N/A" // OpenWeather does not provide local observation time
+        val icon = response.weather.firstOrNull()?.icon
+        val weatherIconUrl = if (icon.isNullOrBlank()) {
+            null
+        } else {
+            "https://openweathermap.org/img/wn/$icon@2x.png"
+        }
 
         return WeatherDisplayData(
             weatherDescription = response.weather.firstOrNull()?.description ?: "No description",
-            weatherIcon = WeatherIconMapper.getIconResource(response.weather.firstOrNull()?.id ?: 0, true), // isDayTime is not available
+            weatherIcon = weatherIconUrl,
             temperatureFahrenheit = formattedTempFahrenheit,
             temperatureCelsius = formattedTempCelsius,
             observedAt = observedTime
