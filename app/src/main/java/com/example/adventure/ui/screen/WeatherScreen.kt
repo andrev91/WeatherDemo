@@ -34,6 +34,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -356,39 +357,104 @@ fun PreviewWeatherScreenContent_Loading() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF000000)
+@Preview(showBackground = true, device = "spec:width=1280dp,height=800dp,dpi=240")
+@Composable
+fun PreviewWeatherScreenContent_Loading_Landscape() {
+    AdventureTheme {
+        WeatherScreenContent(uiState = WeatherUiState(LocationSelectionState(
+            isLoadingCities = true, isLoadingStates = true),
+            WeatherDataState(isLoadingWeather = true)),
+            onDropdownSelected = { _, _ -> },
+            onDropdownSearch = { _, _ -> },
+            onRefreshClicked = {}, onUnitSelected = {}, onDropdownClear = {},
+            onAddBookmark = {})
+    }
+}
+
+@Preview(showBackground = true)
 @Composable
 fun PreviewWeatherScreenContent_Success() {
     AdventureTheme(darkTheme = true) {
-        WeatherScreenContent(
-            uiState = WeatherUiState(
-                weatherState = WeatherDataState(
-                    isLoadingWeather = false,
-                    displayData = WeatherDisplayData(
-                        temperatureFahrenheit = "77°F",
-                        temperatureCelsius = "25°C",
-                        weatherDescription = "Sunny",
-                        weatherIcon = "https://openweathermap.org/img/wn/01d@2x.png",
-                        observedAt = "14:30"
+        Surface {
+            WeatherScreenContent(
+                uiState = WeatherUiState(
+                    weatherState = WeatherDataState(
+                        isLoadingWeather = false,
+                        displayData = WeatherDisplayData(
+                            temperatureFahrenheit = "77°F",
+                            temperatureCelsius = "25°C",
+                            weatherDescription = "Sunny",
+                            weatherIcon = "https://openweathermap.org/img/wn/01d@2x.png",
+                            observedAt = "14:30"
+                        )
+                    ),
+                    locationState = LocationSelectionState(
+                        selectedState = State("Georgia", "GA"),
+                        selectedCity = "Dunwoody",
+                        availableCities = listOf("Dunwoody", "Powder Springs, Marietta")
                     )
                 ),
-                locationState = LocationSelectionState(
-                    selectedState = State("Georgia", "GA"),
-                    selectedCity = "Dunwoody",
-                    availableCities = listOf("Dunwoody","Powder Springs, Marietta")
-                )
-            ),
-            onDropdownSelected = { _, _ -> },
-            onDropdownSearch = { _, _ -> },
-            onRefreshClicked = {},onUnitSelected = {}, onDropdownClear = {},
-            onAddBookmark = {}
-        )
+                onDropdownSelected = { _, _ -> },
+                onDropdownSearch = { _, _ -> },
+                onRefreshClicked = {}, onUnitSelected = {}, onDropdownClear = {},
+                onAddBookmark = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, device = "spec:width=1280dp,height=800dp,dpi=240")
+@Composable
+fun PreviewWeatherScreenContent_Success_Landscape() {
+    AdventureTheme(darkTheme = true) {
+        Surface {
+            WeatherScreenContent(
+                uiState = WeatherUiState(
+                    weatherState = WeatherDataState(
+                        isLoadingWeather = false,
+                        displayData = WeatherDisplayData(
+                            temperatureFahrenheit = "77°F",
+                            temperatureCelsius = "25°C",
+                            weatherDescription = "Sunny",
+                            weatherIcon = "https://openweathermap.org/img/wn/01d@2x.png",
+                            observedAt = "14:30"
+                        )
+                    ),
+                    locationState = LocationSelectionState(
+                        selectedState = State("Georgia", "GA"),
+                        selectedCity = "Dunwoody",
+                        availableCities = listOf("Dunwoody", "Powder Springs, Marietta")
+                    )
+                ),
+                onDropdownSelected = { _, _ -> },
+                onDropdownSearch = { _, _ -> },
+                onRefreshClicked = {}, onUnitSelected = {}, onDropdownClear = {},
+                onAddBookmark = {}
+            )
+        }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun PreviewWeatherScreenContent_Error() {
+    AdventureTheme {
+        WeatherScreenContent(
+            uiState = WeatherUiState(
+                weatherState = WeatherDataState(isLoadingWeather = false),
+                locationState = LocationSelectionState(isLoadingStates = false),
+                error = "Network Error"),
+            onDropdownSelected = { _, _ -> },
+            onDropdownSearch = { _, _ -> },
+            onRefreshClicked = {}, onUnitSelected = {}, onDropdownClear = {},
+            onAddBookmark = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, device = "spec:width=1280dp,height=800dp,dpi=240")
+@Composable
+fun PreviewWeatherScreenContent_Error_Landscape() {
     AdventureTheme {
         WeatherScreenContent(
             uiState = WeatherUiState(
