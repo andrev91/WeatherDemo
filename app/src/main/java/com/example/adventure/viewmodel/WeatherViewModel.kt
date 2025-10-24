@@ -1,5 +1,6 @@
 package com.example.adventure.viewmodel
 
+import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
@@ -20,7 +21,6 @@ import com.example.adventure.ui.state.LocationType
 import com.example.adventure.ui.state.LocationType.*
 import com.example.adventure.ui.state.WeatherDataState
 import com.example.adventure.ui.state.WeatherUiState
-import com.example.adventure.util.WeatherIconMapper
 import com.example.adventure.worker.WeatherWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -44,7 +44,7 @@ data class WeatherDisplayData(
     val temperatureFahrenheit : String,
     val temperatureCelsius : String,
     val weatherDescription: String,
-    val weatherIcon: Int? = null,
+    val weatherIcon: String? = null,
     val observedAt : String,
 )
 
@@ -243,9 +243,9 @@ class WeatherViewModel @Inject constructor(
         }
     }
 
-    fun triggerTempTypeChange(UName: UnitType) {
-        if (_uiState.value.weatherState.temperatureUnit == UName) return
-        updateWeatherState { currentState -> currentState.copy(temperatureUnit = UName) }
+    fun triggerTempTypeChange(uName: UnitType) {
+        if (_uiState.value.weatherState.temperatureUnit == uName) return
+        updateWeatherState { currentState -> currentState.copy(temperatureUnit = uName) }
     }
 
     private fun fetchStateList() {
@@ -334,14 +334,21 @@ class WeatherViewModel @Inject constructor(
         }
     }
 
+    @SuppressLint("DefaultLocale")
     private fun mapResponseToDisplayData(response: OpenWeatherResponseDTO): WeatherDisplayData {
         val formattedTempFahrenheit = "${response.main.temp}°F"
         val formattedTempCelsius = String.format("%.2f°C", (response.main.temp - 32) * 5 / 9)
         val observedTime = "N/A" // OpenWeather does not provide local observation time
+        val icon = response.weather.firstOrNull()?.icon
+        val weatherIconUrl = if (icon.isNullOrBlank()) {
+            null
+        } else {
+            "https://openweathermap.org/img/wn/$icon@2x.png"
+        }
 
         return WeatherDisplayData(
             weatherDescription = response.weather.firstOrNull()?.description ?: "No description",
-            weatherIcon = WeatherIconMapper.getIconResource(response.weather.firstOrNull()?.id ?: 0, true), // isDayTime is not available
+            weatherIcon = weatherIconUrl,
             temperatureFahrenheit = formattedTempFahrenheit,
             temperatureCelsius = formattedTempCelsius,
             observedAt = observedTime

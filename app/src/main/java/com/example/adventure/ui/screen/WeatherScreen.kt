@@ -1,6 +1,5 @@
 package com.example.adventure.ui.screen
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,12 +47,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.example.adventure.R
 import com.example.adventure.data.local.model.Bookmark
 import com.example.adventure.data.model.State
@@ -321,10 +320,10 @@ fun WeatherDetails(data: WeatherDisplayData, unit : UnitType = UnitType.CELSIUS)
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.testTag(TAG_WEATHER_DESC)
             )
-            if (data.weatherIcon != null && data.weatherIcon != 0) {
-                Image(
-                    painter = painterResource(id = data.weatherIcon),
-                    contentDescription = null,
+            if (!data.weatherIcon.isNullOrBlank()) {
+                AsyncImage(
+                    model = data.weatherIcon,
+                    contentDescription = "Weather Icon",
                     modifier = Modifier.size(48.dp)
                 )
             }
@@ -382,8 +381,11 @@ fun PreviewWeatherScreenContent_Success() {
                     weatherState = WeatherDataState(
                         isLoadingWeather = false,
                         displayData = WeatherDisplayData(
-                            "Sunny", "25°C", "77°F",
-                            R.mipmap.rainy_white_background, "14:30"
+                            temperatureFahrenheit = "77°F",
+                            temperatureCelsius = "25°C",
+                            weatherDescription = "Sunny",
+                            weatherIcon = "https://openweathermap.org/img/wn/01d@2x.png",
+                            observedAt = "14:30"
                         )
                     ),
                     locationState = LocationSelectionState(
@@ -411,8 +413,11 @@ fun PreviewWeatherScreenContent_Success_Landscape() {
                     weatherState = WeatherDataState(
                         isLoadingWeather = false,
                         displayData = WeatherDisplayData(
-                            "Sunny", "25°C", "77°F",
-                            R.mipmap.rainy_white_background, "14:30"
+                            temperatureFahrenheit = "77°F",
+                            temperatureCelsius = "25°C",
+                            weatherDescription = "Sunny",
+                            weatherIcon = "https://openweathermap.org/img/wn/01d@2x.png",
+                            observedAt = "14:30"
                         )
                     ),
                     locationState = LocationSelectionState(
