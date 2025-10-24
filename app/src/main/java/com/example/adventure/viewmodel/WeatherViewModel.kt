@@ -1,5 +1,6 @@
 package com.example.adventure.viewmodel
 
+import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
@@ -20,7 +21,6 @@ import com.example.adventure.ui.state.LocationType
 import com.example.adventure.ui.state.LocationType.*
 import com.example.adventure.ui.state.WeatherDataState
 import com.example.adventure.ui.state.WeatherUiState
-import com.example.adventure.util.WeatherIconMapper
 import com.example.adventure.worker.WeatherWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -243,9 +243,9 @@ class WeatherViewModel @Inject constructor(
         }
     }
 
-    fun triggerTempTypeChange(UName: UnitType) {
-        if (_uiState.value.weatherState.temperatureUnit == UName) return
-        updateWeatherState { currentState -> currentState.copy(temperatureUnit = UName) }
+    fun triggerTempTypeChange(uName: UnitType) {
+        if (_uiState.value.weatherState.temperatureUnit == uName) return
+        updateWeatherState { currentState -> currentState.copy(temperatureUnit = uName) }
     }
 
     private fun fetchStateList() {
@@ -334,6 +334,7 @@ class WeatherViewModel @Inject constructor(
         }
     }
 
+    @SuppressLint("DefaultLocale")
     private fun mapResponseToDisplayData(response: OpenWeatherResponseDTO): WeatherDisplayData {
         val formattedTempFahrenheit = "${response.main.temp}°F"
         val formattedTempCelsius = String.format("%.2f°C", (response.main.temp - 32) * 5 / 9)
