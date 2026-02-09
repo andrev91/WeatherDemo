@@ -31,7 +31,8 @@ class LocationRemoteDataSource @Inject constructor(
             searchRequest
         )
 
-        val workObserver = Observer<WorkInfo> { workInfo ->
+        val workObserver = Observer<WorkInfo?> { workInfo ->
+            if (workInfo == null) return@Observer
             when (workInfo.state) {
                 WorkInfo.State.SUCCEEDED -> {
                     val lat = workInfo.outputData.getDouble(SearchWorker.OUTPUT_LAT, Double.NaN)
