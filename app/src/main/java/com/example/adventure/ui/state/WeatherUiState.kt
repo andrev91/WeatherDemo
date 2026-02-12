@@ -10,7 +10,8 @@ data class WeatherUiState(
     val locationState : LocationSelectionState = LocationSelectionState(),
     val weatherState : WeatherDataState = WeatherDataState(),
     val error: String? = null,
-    val bookmarkState: BookmarkState? = null
+    val bookmarks: List<Bookmark> = emptyList(),
+    val bookmarkState: BookmarkState? = null,
 )
 
 data class LocationSelectionState(
@@ -24,11 +25,10 @@ data class LocationSelectionState(
     val selectedCity: String? = null,
     val citySearchQuery: TextFieldValue = TextFieldValue(""),
     val filteredCities: List<String> = emptyList(),
-    val bookmarks: List<Bookmark> = emptyList()
 )
 
 data class WeatherDataState(
     val isLoadingWeather: Boolean = false,
     val displayData: WeatherDisplayData? = null,
-    val temperatureUnit: UnitType = UnitType.CELSIUS
+    val temperatureUnit: UnitType = UnitType.CELSIUS,
 )

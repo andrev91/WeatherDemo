@@ -80,7 +80,7 @@ class WeatherViewModel @Inject constructor(
     private fun observeBookmarks() {
         viewModelScope.launch {
             locationRepository.getBookmarks().collect { bookmarks ->
-                updateLocationState { it.copy(bookmarks = bookmarks) }
+                _uiState.update { it.copy(bookmarks = bookmarks) }
             }
         }
     }

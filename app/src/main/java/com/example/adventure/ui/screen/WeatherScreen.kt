@@ -182,35 +182,6 @@ fun WeatherScreenContent(uiState: WeatherUiState,
 }
 
 @Composable
-fun BookmarksList(
-    bookmarks: List<Bookmark>,
-    onBookmarkClick: (Bookmark) -> Unit,
-    onDeleteClick: (Bookmark) -> Unit
-) {
-    Card(elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Bookmarked Locations", style = MaterialTheme.typography.titleLarge)
-            Spacer(modifier = Modifier.height(8.dp))
-            bookmarks.forEach { bookmark ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onBookmarkClick(bookmark) }
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("${bookmark.cityName}, ${bookmark.stateAbbreviation}")
-                    IconButton(onClick = { onDeleteClick(bookmark) }) {
-                        Icon(Icons.Filled.Clear, contentDescription = "Delete bookmark")
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
 fun RadioButtonSelection(selectedUnit : UnitType, onOptionSelected : (UnitType) -> Unit) {
     val radioOptions = UnitType.entries
     Row (Modifier.selectableGroup(),
