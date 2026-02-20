@@ -24,7 +24,9 @@ import com.example.adventure.ui.state.WeatherUiState
 import com.example.adventure.worker.WeatherWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -135,11 +137,13 @@ class WeatherViewModel @Inject constructor(
     fun clearDropdownSelection(locationType : LocationType) {
         when (locationType) {
             STATE -> {
+                searchJob?.cancel()
                 updateLocationState { currentState -> currentState.copy(selectedState = null, isLoadingStates = false, filteredStates = emptyList(),
                     isLoadingCities = false, selectedCity = null, availableCities = null,
                     stateSearchQuery = TextFieldValue(""), citySearchQuery = TextFieldValue("")) }
             }
             CITY -> {
+                searchJob?.cancel()
                 updateLocationState { currentState -> currentState.copy(
                     isLoadingCities = false, selectedCity = null, filteredCities = emptyList(), citySearchQuery = TextFieldValue("")) }
             }
@@ -151,6 +155,7 @@ class WeatherViewModel @Inject constructor(
     fun setDropdownSelection(locationType : LocationType, location: String) {
         when (locationType) {
             STATE -> {
+                searchJob?.cancel()
                 val state = locationRepository.getStateFromString(location) ?: return
                 if (state == _uiState.value.locationState.selectedState) return
 
@@ -166,6 +171,7 @@ class WeatherViewModel @Inject constructor(
                 }
             }
             CITY -> {
+                searchJob?.cancel()
                 if (location == _uiState.value.locationState.selectedCity) return
                 updateLocationState { currentState -> currentState.copy(selectedCity = location, citySearchQuery = TextFieldValue(location)) }
                 updateWeatherState { currentState -> currentState.copy(displayData = null) }
@@ -185,21 +191,32 @@ class WeatherViewModel @Inject constructor(
         }
     }
 
+    private var searchJob: Job? = null
+
     private fun searchCityList(query: TextFieldValue) {
         if (_uiState.value.locationState.citySearchQuery == query) return
-        updateLocationState { currentState ->
-            _uiState.update { it.copy(error = null) }
+
+        updateLocationState { currentState -> currentState.copy(citySearchQuery = query) }
+        _uiState.update { it.copy(error = null) }
+
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch(Dispatchers.Default) {
+            val currentState = _uiState.value.locationState
             val filteredCities = if (query.text.isBlank()) {
-                currentState.availableCities
+                currentState.availableCities ?: emptyList()
             } else {
-                val test = _uiState.value.locationState.selectedState?.abbreviation
+                val test = currentState.selectedState?.abbreviation
                 val cities = locationRepository.getCities()[test]
-                cities!!.allCities
-                    .filter { city ->
+                cities?.allCities
+                    ?.filter { city ->
                         city.contains(query.text, ignoreCase = true)
-                    }
+                    } ?: emptyList()
             }
-        currentState.copy(citySearchQuery = query, filteredCities = filteredCities!!) }
+
+            if (isActive) {
+                updateLocationState { state -> state.copy(filteredCities = filteredCities) }
+            }
+        }
     }
 
     private fun fetchWeather(lat: Double, lon: Double) {

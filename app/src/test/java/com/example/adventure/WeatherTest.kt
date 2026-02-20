@@ -1,6 +1,7 @@
 package com.example.adventure
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
 import androidx.work.Operation
@@ -9,6 +10,7 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import app.cash.turbine.test
 import com.example.adventure.data.model.State
+import com.example.adventure.data.model.StateCities
 import com.example.adventure.data.repository.LocationRepository
 import com.example.adventure.ui.state.LocationType
 import com.example.adventure.viewmodel.WeatherViewModel
@@ -136,5 +138,32 @@ class WeatherTest {
         val weatherWorkRequest = weatherRequestCaptor.firstValue
         assertTrue(weatherWorkRequest.workSpec.input.getDouble(com.example.adventure.worker.WeatherWorker.WEATHER_LAT_KEY, 0.0) == 40.7128)
         assertTrue(weatherWorkRequest.workSpec.input.getDouble(com.example.adventure.worker.WeatherWorker.WEATHER_LON_KEY, 0.0) == -74.0060)
+    }
+
+    @Test
+    fun `searchCityList filters cities correctly`() = runTest {
+        val cityList = listOf("San Francisco", "San Jose", "Los Angeles")
+        val stateCities = StateCities(allCities = cityList, majorCities = emptyList())
+        val mockState = State("California", "CA")
+
+        whenever(mockLocationRepository.getStateFromString("California")).thenReturn(mockState)
+        whenever(mockLocationRepository.getCities()).thenReturn(mapOf("CA" to stateCities))
+        whenever(mockLocationRepository.getMajorCitiesByState("CA")).thenReturn(emptyList())
+
+        viewModel.setDropdownSelection(LocationType.STATE, "California")
+
+        // Advance to let state selection settle
+        advanceUntilIdle()
+
+        viewModel.searchDropdownList(LocationType.CITY, TextFieldValue("San"))
+
+        Thread.sleep(200) // Wait for background thread (Dispatchers.Default)
+        advanceUntilIdle()
+
+        val currentState = viewModel.uiState.value
+        val filtered = currentState.locationState.filteredCities
+        assertTrue(filtered.contains("San Francisco"))
+        assertTrue(filtered.contains("San Jose"))
+        assertFalse(filtered.contains("Los Angeles"))
     }
 }
