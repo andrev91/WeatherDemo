@@ -3,7 +3,7 @@ package com.example.adventure.ui.state
 import androidx.compose.ui.text.input.TextFieldValue
 import com.example.adventure.data.local.model.Bookmark
 import com.example.adventure.data.model.State
-import com.example.adventure.viewmodel.UnitType
+import com.example.adventure.data.model.TemperatureUnit
 import com.example.adventure.viewmodel.WeatherDisplayData
 
 data class WeatherUiState(
@@ -30,5 +30,5 @@ data class LocationSelectionState(
 data class WeatherDataState(
     val isLoadingWeather: Boolean = false,
     val displayData: WeatherDisplayData? = null,
-    val temperatureUnit: UnitType = UnitType.CELSIUS,
+    val temperatureUnit: TemperatureUnit = TemperatureUnit.CELSIUS,
 )

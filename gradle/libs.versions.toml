@@ -30,6 +30,8 @@ materialIconsExtended = "1.6.8"
 material3 = "1.2.1"
 uiTooling = "1.8.1"
 fragmentKtx = "1.8.5"
+datastorePreferences = "1.1.1"
+navigationCompose = "2.8.5"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -78,6 +80,9 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
 androidx-runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
+
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

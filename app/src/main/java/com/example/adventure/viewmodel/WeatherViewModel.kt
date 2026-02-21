@@ -13,8 +13,10 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.example.adventure.data.local.model.Bookmark
+import com.example.adventure.data.model.TemperatureUnit
 import com.example.adventure.data.network.model.OpenWeatherResponseDTO
 import com.example.adventure.data.repository.LocationRepository
+import com.example.adventure.data.repository.SettingsRepository
 import com.example.adventure.ui.state.BookmarkState
 import com.example.adventure.ui.state.LocationSelectionState
 import com.example.adventure.ui.state.LocationType
@@ -50,20 +52,11 @@ data class WeatherDisplayData(
     val observedAt : String,
 )
 
-enum class UnitType {
-    CELSIUS, FAHRENHEIT;
-    override fun toString(): String {
-        return when (this) {
-            CELSIUS -> "Celsius"
-            FAHRENHEIT -> "Fahrenheit"
-        }
-    }
-}
-
 @HiltViewModel
 class WeatherViewModel @Inject constructor(
     private val workManager: WorkManager,
-    private val locationRepository: LocationRepository
+    private val locationRepository: LocationRepository,
+    private val settingsRepository: SettingsRepository
     ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WeatherUiState())
@@ -77,6 +70,15 @@ class WeatherViewModel @Inject constructor(
     init {
         fetchStateList()
         observeBookmarks()
+        observeTemperatureUnit()
+    }
+
+    private fun observeTemperatureUnit() {
+        viewModelScope.launch {
+            settingsRepository.temperatureUnit.collect { unit ->
+                updateWeatherState { it.copy(temperatureUnit = unit) }
+            }
+        }
     }
 
     private fun observeBookmarks() {
@@ -260,10 +262,6 @@ class WeatherViewModel @Inject constructor(
         }
     }
 
-    fun triggerTempTypeChange(uName: UnitType) {
-        if (_uiState.value.weatherState.temperatureUnit == uName) return
-        updateWeatherState { currentState -> currentState.copy(temperatureUnit = uName) }
-    }
 
     private fun fetchStateList() {
         if (_uiState.value.locationState.isLoadingStates) return

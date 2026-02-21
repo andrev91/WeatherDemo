@@ -105,6 +105,12 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
+    // DataStore
+    implementation(libs.androidx.datastore.preferences)
+
+    // Navigation
+    implementation(libs.androidx.navigation.compose)
+
     // API
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging.interceptor)

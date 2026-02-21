@@ -63,7 +63,7 @@ import com.example.adventure.ui.state.WeatherDataState
 import com.example.adventure.ui.state.WeatherUiState
 import com.example.adventure.ui.theme.AdventureTheme
 import com.example.adventure.viewmodel.WeatherViewModel
-import com.example.adventure.viewmodel.UnitType
+import com.example.adventure.data.model.TemperatureUnit
 import com.example.adventure.viewmodel.WeatherDisplayData
 
 const val TAG_LOCATION_DROPDOWN = "LocationDropdown"
@@ -78,7 +78,10 @@ const val TAG_LOCATION_DESC = "LocationDescriptionText"
 const val TAG_REFRESH_BUTTON = "RefreshButton"
 
 @Composable
-fun WeatherScreen(viewModel: WeatherViewModel = hiltViewModel()) {
+fun WeatherScreen(
+    viewModel: WeatherViewModel = hiltViewModel(),
+    onSettingsClick: () -> Unit
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -92,7 +95,8 @@ fun WeatherScreen(viewModel: WeatherViewModel = hiltViewModel()) {
         uiState = uiState,
         snackBarHostState = snackbarHostState,
         onRemoveBookmark = { viewModel.removeBookmark(it) },
-        onLoadBookmark = { viewModel.loadBookmark(it) }
+        onLoadBookmark = { viewModel.loadBookmark(it) },
+        onSettingsClick = onSettingsClick
     ) { paddingValues ->
         WeatherScreenContent(
             uiState = uiState,
@@ -100,7 +104,6 @@ fun WeatherScreen(viewModel: WeatherViewModel = hiltViewModel()) {
             onDropdownClear = { viewModel.clearDropdownSelection(it) },
             onDropdownSelected = { locationType, location -> viewModel.setDropdownSelection(locationType, location) },
             onRefreshClicked = { viewModel.searchLocation() },
-            onUnitSelected = { viewModel.triggerTempTypeChange(it) },
             onAddBookmark = { viewModel.addBookmark() }
         )
     }
@@ -112,7 +115,6 @@ fun WeatherScreenContent(uiState: WeatherUiState,
                          onDropdownClear : (LocationType) -> Unit,
                          onDropdownSelected : (LocationType, String) -> Unit,
                          onRefreshClicked: () -> Unit,
-                         onUnitSelected : (UnitType) -> Unit,
                          onAddBookmark: () -> Unit) {
     val scrollState = rememberScrollState()
     Column(modifier = Modifier
@@ -174,39 +176,6 @@ fun WeatherScreenContent(uiState: WeatherUiState,
                 Button(onClick = onAddBookmark, elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)) {
                     Text("Bookmark")
                 }
-            }
-        }
-        Spacer(modifier = Modifier.height(24.dp))
-        RadioButtonSelection(selectedUnit = uiState.weatherState.temperatureUnit, onOptionSelected = onUnitSelected)
-    }
-}
-
-@Composable
-fun RadioButtonSelection(selectedUnit : UnitType, onOptionSelected : (UnitType) -> Unit) {
-    val radioOptions = UnitType.entries
-    Row (Modifier.selectableGroup(),
-        horizontalArrangement = Arrangement.Center) {
-        radioOptions.forEach { option ->
-            Row(modifier = Modifier
-                .height(56.dp)
-                .padding(16.dp)
-                .selectable(
-                    selected = (option == selectedUnit),
-                    onClick = { onOptionSelected(option) },
-                    role = androidx.compose.ui.semantics.Role.RadioButton
-                ),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center) {
-                    RadioButton(
-                        modifier = Modifier.testTag(option.toString()) ,
-                        selected = (option == selectedUnit ),
-                        onClick = null
-                    )
-                    Text(
-                        text = option.toString(),
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(start = 16.dp)
-                    )
             }
         }
     }
@@ -281,7 +250,7 @@ fun <T> SearchableDropDown(
 }
 
 @Composable
-fun WeatherDetails(data: WeatherDisplayData, unit : UnitType = UnitType.CELSIUS) {
+fun WeatherDetails(data: WeatherDisplayData, unit : TemperatureUnit = TemperatureUnit.CELSIUS) {
     Card(elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)) {
         Column(modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -300,7 +269,7 @@ fun WeatherDetails(data: WeatherDisplayData, unit : UnitType = UnitType.CELSIUS)
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Temperature: " + if (unit == UnitType.CELSIUS) data.temperatureCelsius
+                text = "Temperature: " + if (unit == TemperatureUnit.CELSIUS) data.temperatureCelsius
                 else data.temperatureFahrenheit,
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.testTag(TAG_WEATHER_TEMP)
@@ -323,7 +292,7 @@ fun PreviewWeatherScreenContent_Loading() {
             WeatherDataState(isLoadingWeather = true)),
             onDropdownSelected = { _, _ -> },
             onDropdownSearch = { _, _ -> },
-            onRefreshClicked = {}, onUnitSelected = {}, onDropdownClear = {},
+            onRefreshClicked = {}, onDropdownClear = {},
             onAddBookmark = {})
     }
 }
@@ -337,7 +306,7 @@ fun PreviewWeatherScreenContent_Loading_Landscape() {
             WeatherDataState(isLoadingWeather = true)),
             onDropdownSelected = { _, _ -> },
             onDropdownSearch = { _, _ -> },
-            onRefreshClicked = {}, onUnitSelected = {}, onDropdownClear = {},
+            onRefreshClicked = {}, onDropdownClear = {},
             onAddBookmark = {})
     }
 }
@@ -367,7 +336,7 @@ fun PreviewWeatherScreenContent_Success() {
                 ),
                 onDropdownSelected = { _, _ -> },
                 onDropdownSearch = { _, _ -> },
-                onRefreshClicked = {}, onUnitSelected = {}, onDropdownClear = {},
+                onRefreshClicked = {}, onDropdownClear = {},
                 onAddBookmark = {}
             )
         }
@@ -399,7 +368,7 @@ fun PreviewWeatherScreenContent_Success_Landscape() {
                 ),
                 onDropdownSelected = { _, _ -> },
                 onDropdownSearch = { _, _ -> },
-                onRefreshClicked = {}, onUnitSelected = {}, onDropdownClear = {},
+                onRefreshClicked = {}, onDropdownClear = {},
                 onAddBookmark = {}
             )
         }
@@ -417,7 +386,7 @@ fun PreviewWeatherScreenContent_Error() {
                 error = "Network Error"),
             onDropdownSelected = { _, _ -> },
             onDropdownSearch = { _, _ -> },
-            onRefreshClicked = {}, onUnitSelected = {}, onDropdownClear = {},
+            onRefreshClicked = {}, onDropdownClear = {},
             onAddBookmark = {}
         )
     }
@@ -434,7 +403,7 @@ fun PreviewWeatherScreenContent_Error_Landscape() {
                 error = "Network Error"),
             onDropdownSelected = { _, _ -> },
             onDropdownSearch = { _, _ -> },
-            onRefreshClicked = {}, onUnitSelected = {}, onDropdownClear = {},
+            onRefreshClicked = {}, onDropdownClear = {},
             onAddBookmark = {}
         )
     }
