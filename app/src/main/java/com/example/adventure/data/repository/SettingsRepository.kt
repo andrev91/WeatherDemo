@@ -17,7 +17,7 @@ import javax.inject.Singleton
 class SettingsRepository @Inject constructor(
     private val dataStore: DataStore<Preferences>
 ) {
-    private val UNIT_KEY = stringPreferencesKey("temperature_unit")
+    private val unitKey = stringPreferencesKey("temperature_unit")
 
     val temperatureUnit: Flow<TemperatureUnit> = dataStore.data
         .catch { exception ->
@@ -28,11 +28,11 @@ class SettingsRepository @Inject constructor(
             }
         }
         .map { preferences ->
-            val unitString = preferences[UNIT_KEY]
+            val unitString = preferences[unitKey]
             if (unitString != null) {
                 try {
                     TemperatureUnit.valueOf(unitString)
-                } catch (e: IllegalArgumentException) {
+                } catch (_: IllegalArgumentException) {
                     TemperatureUnit.CELSIUS
                 }
             } else {
@@ -42,7 +42,7 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setTemperatureUnit(unit: TemperatureUnit) {
         dataStore.edit { preferences ->
-            preferences[UNIT_KEY] = unit.name
+            preferences[unitKey] = unit.name
         }
     }
 }

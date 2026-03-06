@@ -4,6 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -11,9 +14,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.ui.NavDisplay
 import com.example.adventure.ui.screen.SettingsScreen
 import com.example.adventure.ui.screen.WeatherScreen
 import com.example.adventure.ui.theme.AdventureTheme
@@ -21,10 +25,10 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.serialization.Serializable
 
 @Serializable
-object WeatherRoute
+object WeatherRoute : NavKey
 
 @Serializable
-object SettingsRoute
+object SettingsRoute : NavKey
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -34,19 +38,31 @@ class MainActivity : ComponentActivity() {
         setContent {
             AdventureTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    val navController = rememberNavController()
-                    NavHost(navController = navController, startDestination = WeatherRoute) {
-                        composable<WeatherRoute> {
-                            WeatherScreen(
-                                onSettingsClick = { navController.navigate(SettingsRoute) }
-                            )
-                        }
-                        composable<SettingsRoute> {
-                            SettingsScreen(
-                                onNavigateBack = { navController.popBackStack() }
-                            )
-                        }
-                    }
+                    val backStack = rememberNavBackStack(WeatherRoute)
+                    NavDisplay(
+                        backStack = backStack,
+                        onBack = {
+                            backStack.removeLastOrNull()
+                        },
+                        transitionSpec = {
+                            slideInHorizontally(initialOffsetX = { it }) togetherWith slideOutHorizontally(targetOffsetX = { -it })
+                        },
+                        popTransitionSpec = {
+                            slideInHorizontally(initialOffsetX = { -it }) togetherWith slideOutHorizontally(targetOffsetX = { it })
+                        },
+                        entryProvider = entryProvider {
+                            entry<WeatherRoute> {
+                                WeatherScreen(
+                                    onSettingsClick = { backStack.add(SettingsRoute) }
+                                )
+                            }
+                            entry<SettingsRoute> {
+                                SettingsScreen(
+                                    onNavigateBack = { backStack.removeLastOrNull() }
+                                )
+                            }
+                        },
+                    )
                 }
             }
         }

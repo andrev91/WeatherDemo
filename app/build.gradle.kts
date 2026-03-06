@@ -20,7 +20,7 @@ plugins {
 
 android {
     namespace = "com.example.adventure"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.adventure"
@@ -109,7 +109,8 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
 
     // Navigation
-    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
 
     // API
     implementation(libs.okhttp)
