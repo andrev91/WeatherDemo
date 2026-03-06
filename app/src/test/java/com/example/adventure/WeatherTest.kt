@@ -12,6 +12,7 @@ import app.cash.turbine.test
 import com.example.adventure.data.model.State
 import com.example.adventure.data.model.StateCities
 import com.example.adventure.data.repository.LocationRepository
+import com.example.adventure.data.repository.SettingsRepository
 import com.example.adventure.ui.state.LocationType
 import com.example.adventure.viewmodel.WeatherViewModel
 import com.example.adventure.worker.USLocationWorker.Companion.LOCATION_JSON
@@ -60,6 +61,9 @@ class WeatherTest {
     private lateinit var mockLocationRepository : LocationRepository
 
     @Mock
+    private lateinit var mockSettingsRepository : SettingsRepository
+
+    @Mock
     private lateinit var viewModel : WeatherViewModel
 
     @Before
@@ -84,8 +88,9 @@ class WeatherTest {
         whenever(mockWorkManager.getWorkInfoByIdFlow(any())).thenReturn(mockWorkInfo)
         whenever(mockLocationRepository.getBookmarks()).thenReturn(kotlinx.coroutines.flow.emptyFlow())
         whenever(mockLocationRepository.getStates()).thenReturn(emptyList())
+        whenever(mockSettingsRepository.temperatureUnit).thenReturn(kotlinx.coroutines.flow.emptyFlow())
 
-        viewModel = WeatherViewModel(mockWorkManager, mockLocationRepository)
+        viewModel = WeatherViewModel(mockWorkManager, mockLocationRepository, mockSettingsRepository)
     }
 
     @After

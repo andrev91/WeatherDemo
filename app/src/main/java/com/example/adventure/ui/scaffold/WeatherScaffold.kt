@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -44,6 +45,7 @@ fun WeatherScaffold(
     snackBarHostState: SnackbarHostState,
     onRemoveBookmark: (Bookmark) -> Unit,
     onLoadBookmark: (Bookmark) -> Unit,
+    onSettingsClick: () -> Unit,
     content: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(
@@ -51,6 +53,9 @@ fun WeatherScaffold(
             TopAppBar(
                 title = { Text("Weather App") },
                 actions = {
+                    IconButton(onClick = onSettingsClick) {
+                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                    }
                     var expanded by remember { mutableStateOf(false) }
                     IconButton(onClick = { expanded = true }) {
                         Icon(Icons.Filled.Bookmark, contentDescription = "Bookmarks")
@@ -121,6 +126,7 @@ fun PreviewScaffold() {
         uiState = WeatherUiState(),
         onRemoveBookmark = {},
         onLoadBookmark = {},
+        onSettingsClick = {},
         content = {},
         snackBarHostState = remember { SnackbarHostState() }
     )
