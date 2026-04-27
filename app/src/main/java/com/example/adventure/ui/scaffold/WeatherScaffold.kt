@@ -33,8 +33,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.adventure.R
 import com.example.adventure.data.local.model.Bookmark
 import com.example.adventure.ui.state.WeatherUiState
 
@@ -51,14 +53,14 @@ fun WeatherScaffold(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Weather App") },
+                title = { Text(stringResource(R.string.scaffold_weather_app_label)) },
                 actions = {
                     IconButton(onClick = onSettingsClick) {
-                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                        Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.cd_settings))
                     }
                     var expanded by remember { mutableStateOf(false) }
                     IconButton(onClick = { expanded = true }) {
-                        Icon(Icons.Filled.Bookmark, contentDescription = "Bookmarks")
+                        Icon(Icons.Filled.Bookmark, contentDescription = stringResource(R.string.cd_bookmarks))
                     }
                     DropdownMenu(
                         expanded = expanded,
@@ -75,7 +77,7 @@ fun WeatherScaffold(
                             )
                         } else {
                             DropdownMenuItem(
-                                text = { Text("No bookmarks yet") },
+                                text = { Text(stringResource(R.string.scaffold_no_bookmarks_yet_label)) },
                                 onClick = { expanded = false }
                             )
                         }
@@ -98,7 +100,7 @@ private fun BookmarksList(
 ) {
     Card(elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Bookmarked Locations", style = MaterialTheme.typography.titleLarge)
+            Text(stringResource(R.string.scaffold_bookmarked_locations_label), style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(8.dp))
             bookmarks.forEach { bookmark ->
                 Row(
@@ -111,7 +113,7 @@ private fun BookmarksList(
                 ) {
                     Text("${bookmark.cityName}, ${bookmark.stateAbbreviation}")
                     IconButton(onClick = { onDeleteClick(bookmark) }) {
-                        Icon(Icons.Filled.Clear, contentDescription = "Delete bookmark")
+                        Icon(Icons.Filled.Clear, contentDescription = stringResource(R.string.cd_delete_bookmark))
                     }
                 }
             }

@@ -1,6 +1,5 @@
 package com.example.adventure.ui.screen
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,8 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
@@ -31,7 +28,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -44,9 +40,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -54,7 +52,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.adventure.R
-import com.example.adventure.data.local.model.Bookmark
 import com.example.adventure.data.model.State
 import com.example.adventure.ui.scaffold.WeatherScaffold
 import com.example.adventure.ui.state.LocationSelectionState
@@ -64,6 +61,7 @@ import com.example.adventure.ui.state.WeatherUiState
 import com.example.adventure.ui.theme.AdventureTheme
 import com.example.adventure.viewmodel.WeatherViewModel
 import com.example.adventure.data.model.TemperatureUnit
+import com.example.adventure.util.UiText
 import com.example.adventure.viewmodel.WeatherDisplayData
 
 const val TAG_LOCATION_DROPDOWN = "LocationDropdown"
@@ -84,10 +82,11 @@ fun WeatherScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.bookmarkStateChannel.collect { state ->
-            snackbarHostState.showSnackbar(state.message, duration = SnackbarDuration.Short)
+            snackbarHostState.showSnackbar(state.message.asString(context), duration = SnackbarDuration.Short)
         }
     }
 
@@ -97,7 +96,7 @@ fun WeatherScreen(
         onRemoveBookmark = { viewModel.removeBookmark(it) },
         onLoadBookmark = { viewModel.loadBookmark(it) },
         onSettingsClick = onSettingsClick
-    ) { paddingValues ->
+    ) { _ ->
         WeatherScreenContent(
             uiState = uiState,
             onDropdownSearch = { locationType, search -> viewModel.searchDropdownList(locationType, search) },
@@ -123,11 +122,11 @@ fun WeatherScreenContent(uiState: WeatherUiState,
         .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center) {
-        Text("OpenWeather Data", style = MaterialTheme.typography.headlineMedium)
+        Text(stringResource(R.string.weather_screen_open_weather_data_label), style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
 
         SearchableDropDown(
-            label = "US State",
+            label = stringResource(R.string.weather_screen_us_state_label),
             testTag = TAG_LOCATION_DESC,
             options = uiState.locationState.filteredStates.ifEmpty { uiState.locationState.availableStates!! },
             onClear = { onDropdownClear(LocationType.STATE) },
@@ -139,7 +138,7 @@ fun WeatherScreenContent(uiState: WeatherUiState,
         Spacer(Modifier.height(8.dp))
         if (uiState.locationState.selectedState != null && !uiState.locationState.availableCities.isNullOrEmpty()) {
             SearchableDropDown(
-                label = "City",
+                label = stringResource(R.string.weather_screen_city_label),
                 testTag = TAG_CITY_DROPDOWN,
                 options = uiState.locationState.filteredCities.ifEmpty { uiState.locationState.availableCities },
                 onClear = { onDropdownClear(LocationType.CITY) } ,
@@ -150,16 +149,14 @@ fun WeatherScreenContent(uiState: WeatherUiState,
             ) { it }
             Spacer(Modifier.height(16.dp))
         }
-        if ((uiState.locationState.isLoadingStates || uiState.locationState.isLoadingCities
-            || uiState.weatherState.isLoadingWeather) && uiState.error == null) {
+        if ((uiState.locationState.isLoadingStates || uiState.locationState.isLoadingCities || uiState.weatherState.isLoadingWeather) && uiState.error == null) {
             CircularProgressIndicator(modifier = Modifier.testTag(TAG_PROGRESS))
-            Text(text = "Loading...", modifier = Modifier.padding(8.dp))
+            Text(text = stringResource(R.string.weather_screen_loading_text), modifier = Modifier.padding(8.dp))
         }
-        else if (uiState.weatherState.displayData == null
-            && uiState.error == null) {
-            Text(text = "Weather/Location Data", modifier = Modifier.padding(8.dp))
+        else if (uiState.weatherState.displayData == null && uiState.error == null) {
+            Text(text = stringResource(R.string.weather_screen_weather_location_data_text), modifier = Modifier.padding(8.dp))
         } else if (uiState.error != null) {
-            Text(text = uiState.error, color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag(TAG_ERROR_TEXT))
+            Text(text = uiState.error.asString(), color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag(TAG_ERROR_TEXT))
             Spacer(modifier = Modifier.height(8.dp))
         }
         if (uiState.weatherState.displayData != null) {
@@ -167,14 +164,14 @@ fun WeatherScreenContent(uiState: WeatherUiState,
             Spacer(modifier = Modifier.height(8.dp))
         }
         Row {
-            Button(onClick = onRefreshClicked, modifier = Modifier.testTag(TAG_REFRESH_BUTTON)
-                , elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)) {
-                Text(text = if (uiState.weatherState.displayData != null) "Refresh Weather Data" else "Fetch Weather Data")
+            Button(onClick = onRefreshClicked, modifier = Modifier.testTag(TAG_REFRESH_BUTTON), elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)) {
+                Text(text = if (uiState.weatherState.displayData != null) stringResource(R.string.weather_screen_refresh_weather_data_label)
+                else stringResource(R.string.weather_screen_fetch_weather_data_label))
             }
             if (uiState.locationState.selectedState != null && uiState.locationState.selectedCity != null) {
                 Spacer(modifier = Modifier.weight(0.1f))
                 Button(onClick = onAddBookmark, elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)) {
-                    Text("Bookmark")
+                    Text(stringResource(R.string.bookmark_button_label))
                 }
             }
         }
@@ -221,7 +218,9 @@ fun <T> SearchableDropDown(
                         IconButton(onClick = {
                             onClear()
                             expanded = false
-                        }) { Icon(Icons.Filled.Clear, contentDescription = "Clear selection") }
+                        }) {
+                            Icon(Icons.Filled.Clear, contentDescription = stringResource(R.string.cd_clear_selection))
+                        }
                     } else {
                         ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                     }},
@@ -256,27 +255,26 @@ fun WeatherDetails(data: WeatherDisplayData, unit : TemperatureUnit = Temperatur
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center) {
             Text(
-                text = data.weatherDescription,
+                text = data.weatherDescription.asString(),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.testTag(TAG_WEATHER_DESC)
             )
             if (!data.weatherIcon.isNullOrBlank()) {
                 AsyncImage(
                     model = data.weatherIcon,
-                    contentDescription = "Weather Icon",
+                    contentDescription = stringResource(R.string.cd_weather_icon),
                     modifier = Modifier.size(48.dp)
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Temperature: " + if (unit == TemperatureUnit.CELSIUS) data.temperatureCelsius
-                else data.temperatureFahrenheit,
+                text = stringResource(R.string.weather_screen_temperature_label) + if (unit == TemperatureUnit.CELSIUS) data.temperatureCelsius.asString() else data.temperatureFahrenheit.asString(),
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.testTag(TAG_WEATHER_TEMP)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Observed at: ${data.observedAt}",
+                text = stringResource(R.string.weather_screen_observed_at_label, data.observedAt.asString()),
                 style = MaterialTheme.typography.bodySmall
             )
         }
@@ -321,11 +319,11 @@ fun PreviewWeatherScreenContent_Success() {
                     weatherState = WeatherDataState(
                         isLoadingWeather = false,
                         displayData = WeatherDisplayData(
-                            temperatureFahrenheit = "77°F",
-                            temperatureCelsius = "25°C",
-                            weatherDescription = "Sunny",
+                            temperatureFahrenheit = UiText.DynamicString("77°F"),
+                            temperatureCelsius = UiText.DynamicString("25°C"),
+                            weatherDescription = UiText.DynamicString("Sunny"),
                             weatherIcon = "https://openweathermap.org/img/wn/01d@2x.png",
-                            observedAt = "14:30"
+                            observedAt = UiText.DynamicString("14:30")
                         )
                     ),
                     locationState = LocationSelectionState(
@@ -353,11 +351,11 @@ fun PreviewWeatherScreenContent_Success_Landscape() {
                     weatherState = WeatherDataState(
                         isLoadingWeather = false,
                         displayData = WeatherDisplayData(
-                            temperatureFahrenheit = "77°F",
-                            temperatureCelsius = "25°C",
-                            weatherDescription = "Sunny",
+                            temperatureFahrenheit = UiText.DynamicString("77°F"),
+                            temperatureCelsius = UiText.DynamicString("25°C"),
+                            weatherDescription = UiText.DynamicString("Sunny"),
                             weatherIcon = "https://openweathermap.org/img/wn/01d@2x.png",
-                            observedAt = "14:30"
+                            observedAt = UiText.DynamicString("14:30")
                         )
                     ),
                     locationState = LocationSelectionState(
@@ -383,7 +381,7 @@ fun PreviewWeatherScreenContent_Error() {
             uiState = WeatherUiState(
                 weatherState = WeatherDataState(isLoadingWeather = false),
                 locationState = LocationSelectionState(isLoadingStates = false),
-                error = "Network Error"),
+                error = UiText.DynamicString("Network Error")),
             onDropdownSelected = { _, _ -> },
             onDropdownSearch = { _, _ -> },
             onRefreshClicked = {}, onDropdownClear = {},
@@ -400,7 +398,7 @@ fun PreviewWeatherScreenContent_Error_Landscape() {
             uiState = WeatherUiState(
                 weatherState = WeatherDataState(isLoadingWeather = false),
                 locationState = LocationSelectionState(isLoadingStates = false),
-                error = "Network Error"),
+                error = UiText.DynamicString("Network Error")),
             onDropdownSelected = { _, _ -> },
             onDropdownSearch = { _, _ -> },
             onRefreshClicked = {}, onDropdownClear = {},

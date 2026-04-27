@@ -4,12 +4,13 @@ import androidx.compose.ui.text.input.TextFieldValue
 import com.example.adventure.data.local.model.Bookmark
 import com.example.adventure.data.model.State
 import com.example.adventure.data.model.TemperatureUnit
+import com.example.adventure.util.UiText
 import com.example.adventure.viewmodel.WeatherDisplayData
 
 data class WeatherUiState(
     val locationState : LocationSelectionState = LocationSelectionState(),
     val weatherState : WeatherDataState = WeatherDataState(),
-    val error: String? = null,
+    val error: UiText? = null,
     val bookmarks: List<Bookmark> = emptyList(),
     val bookmarkState: BookmarkState? = null,
 )
