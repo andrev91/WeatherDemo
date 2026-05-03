@@ -12,8 +12,8 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.example.adventure.R
 import com.example.adventure.data.local.model.Bookmark
-import com.example.adventure.data.model.TemperatureUnit
 import com.example.adventure.data.network.model.OpenWeatherResponseDTO
 import com.example.adventure.data.repository.LocationRepository
 import com.example.adventure.data.repository.SettingsRepository
@@ -23,6 +23,7 @@ import com.example.adventure.ui.state.LocationType
 import com.example.adventure.ui.state.LocationType.*
 import com.example.adventure.ui.state.WeatherDataState
 import com.example.adventure.ui.state.WeatherUiState
+import com.example.adventure.util.UiText
 import com.example.adventure.worker.WeatherWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -45,11 +46,11 @@ import java.util.UUID
 import javax.inject.Inject
 
 data class WeatherDisplayData(
-    val temperatureFahrenheit : String,
-    val temperatureCelsius : String,
-    val weatherDescription: String,
+    val temperatureFahrenheit : UiText,
+    val temperatureCelsius : UiText,
+    val weatherDescription: UiText,
     val weatherIcon: String? = null,
-    val observedAt : String,
+    val observedAt : UiText,
 )
 
 @HiltViewModel
@@ -61,10 +62,8 @@ class WeatherViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(WeatherUiState())
     val uiState: StateFlow<WeatherUiState> = _uiState.asStateFlow()
-
     private val _bookmarkStateChannel = Channel<BookmarkState>()
     val bookmarkStateChannel = _bookmarkStateChannel.receiveAsFlow()
-
     private var weatherWorkerUId: UUID? = null
 
     init {
@@ -96,7 +95,7 @@ class WeatherViewModel @Inject constructor(
                 val city = _uiState.value.locationState.selectedCity ?: return@withContext
 
                 if (locationRepository.isBookmarkDuplicate(state.name, city)) {
-                    _bookmarkStateChannel.send(BookmarkState.onError("Cannot save duplicate Bookmark!"))
+                    _bookmarkStateChannel.send(BookmarkState.onError(UiText.StringResource(R.string.cannot_save_duplicate_bookmark)))
                     return@withContext
                 }
 
@@ -106,7 +105,7 @@ class WeatherViewModel @Inject constructor(
                     cityName = city
                 )
                 locationRepository.addBookmark(bookmark)
-                _bookmarkStateChannel.send(BookmarkState.onSuccess("Bookmark successfully added!"))
+                _bookmarkStateChannel.send(BookmarkState.onSuccess(UiText.StringResource(R.string.bookmark_successfully_added)))
             }
         }
     }
@@ -114,7 +113,7 @@ class WeatherViewModel @Inject constructor(
     fun removeBookmark(bookmark: Bookmark) {
         viewModelScope.launch {
             locationRepository.removeBookmark(bookmark)
-            _bookmarkStateChannel.send(BookmarkState.onDelete("Bookmark removed."))
+            _bookmarkStateChannel.send(BookmarkState.onDelete(UiText.StringResource(R.string.bookmark_removed)))
         }
     }
 
@@ -255,7 +254,7 @@ class WeatherViewModel @Inject constructor(
                         result.onSuccess { location ->
                             fetchWeather(location.latitude, location.longitude)
                         }.onFailure { error ->
-                            _uiState.update { it.copy(error = error.message) }
+                            _uiState.update { it.copy(error = UiText.DynamicString(error.message!!)) }
                         }
                     }
             }
@@ -304,19 +303,19 @@ class WeatherViewModel @Inject constructor(
                         } catch (e: Exception) {
                             Log.e(TAG, "Error parsing JSON from worker output", e)
                             updateWeatherState { currentState -> currentState.copy(isLoadingWeather = false) }
-                            _uiState.update { it.copy(error = "Failed to parse weather data.") }
+                            _uiState.update { it.copy(error = UiText.StringResource(R.string.failed_to_parse_weather_data_error)) }
                         }
                     } else {
                         Log.e(TAG, "Work succeeded but weather JSON was null.")
                         updateWeatherState { currentState -> currentState.copy(isLoadingWeather = false) }
-                        _uiState.update { it.copy(error = "Received empty success response.") }
+                        _uiState.update { it.copy(error = UiText.StringResource(R.string.received_empty_success_response_error)) }
                     }
                 } else {
                     val errorMsg = outputData.getString(WeatherWorker.OUTPUT_ERROR_MESSAGE)
                         ?: "Worker reported failure."
                     Log.e(TAG, "Work succeeded but internal flag was false: $errorMsg")
                     updateWeatherState { currentState -> currentState.copy(isLoadingWeather = false) }
-                    _uiState.update { it.copy(error = errorMsg) }
+                    _uiState.update { it.copy(error = UiText.DynamicString(errorMsg)) }
                 }
                 weatherWorkerUId = null
             }
@@ -326,14 +325,14 @@ class WeatherViewModel @Inject constructor(
                     ?: "Unknown error"
                 Log.e(TAG, "Work failed: $errorMsg")
                 updateWeatherState { currentState -> currentState.copy(isLoadingWeather = false) }
-                _uiState.update { it.copy(error = errorMsg) }
+                _uiState.update { it.copy(error = UiText.DynamicString(errorMsg)) }
                 weatherWorkerUId = null
             }
 
             WorkInfo.State.CANCELLED -> {
                 Log.w(TAG, "Work cancelled.")
                 _uiState.update {
-                    _uiState.value.copy(error = "Weather fetch cancelled.")
+                    _uiState.value.copy(error = UiText.StringResource(R.string.weather_fetch_cancelled_error))
                 }
                 updateWeatherState { currentState -> currentState.copy(isLoadingWeather = false) }
                 weatherWorkerUId = null
@@ -362,11 +361,11 @@ class WeatherViewModel @Inject constructor(
         }
 
         return WeatherDisplayData(
-            weatherDescription = response.weather.firstOrNull()?.description ?: "No description",
+            weatherDescription = UiText.DynamicString(response.weather.firstOrNull()?.description ?: "No description"),
             weatherIcon = weatherIconUrl,
-            temperatureFahrenheit = formattedTempFahrenheit,
-            temperatureCelsius = formattedTempCelsius,
-            observedAt = observedTime
+            temperatureFahrenheit = UiText.DynamicString(formattedTempFahrenheit),
+            temperatureCelsius = UiText.DynamicString(formattedTempCelsius),
+            observedAt = UiText.DynamicString(observedTime)
         )
     }
 
